@@ -1,22 +1,65 @@
 import React from 'react';
-import './MainPage.css'; // 스타일 분리
+import './MainPage.css';
+import { FaBook, FaQuestion, FaInfoCircle } from 'react-icons/fa';
 
-const MainPage = () => {
+function MainPage() {
   return (
-    <div className="container">
-      <h1 className="title">메인 화면</h1>
-
-      <div className="main-buttons">
-        <button className="action-button">구매내역</button>
-        <button className="action-button">상품조회</button>
+    <div className="main-container">
+      <div className="main-content">
+        <header className="main-header">
+          <h1 className="title">메인 화면</h1>
+        </header>
+        
+        <div className="button-section">
+          <button className="main-button">
+            <FaBook className="button-icon" />
+            <span>구매내역</span>
+          </button>
+          
+          <button className="main-button">
+            <FaBook className="button-icon" />
+            <span>상품조회</span>
+          </button>
+        </div>
+        
+        {/* 추가 섹션: 최근 본 책 */}
+        <div className="recent-books">
+          <h2 className="section-title">최근 본 책</h2>
+          <div className="book-list">
+            <div className="book-item">
+              <div className="book-cover"></div>
+              <p className="book-title">오늘의 베스트셀러</p>
+            </div>
+            <div className="book-item">
+              <div className="book-cover"></div>
+              <p className="book-title">추천도서</p>
+            </div>
+            <div className="book-item">
+              <div className="book-cover"></div>
+              <p className="book-title">신간도서</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* 추가 섹션: 이벤트 배너 */}
+        <div className="event-banner">
+          <h3>봄맞이 도서 할인 이벤트</h3>
+          <p>4월 한정 특별 할인 중!</p>
+        </div>
       </div>
-
-      <div className="footer">
-        <button className="footer-button">공지사항</button>
-        <button className="footer-button">이용 방법 안내</button>
-      </div>
+      
+      <footer className="main-footer">
+        <div className="footer-button">
+          <FaInfoCircle className="footer-icon" />
+          <span>공지사항</span>
+        </div>
+        <div className="footer-button">
+          <FaQuestion className="footer-icon" />
+          <span>이용 방법 안내</span>
+        </div>
+      </footer>
     </div>
   );
-};
+}
 
 export default MainPage;
