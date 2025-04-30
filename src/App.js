@@ -1,8 +1,20 @@
+// App.js
 import React from 'react';
-import MainPage from './MainPage';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import MainPage from './components/MainPage';
+import SubPage from './components/SubPage';
 
 function App() {
-  return <MainPage />;
+  return (
+    <Router>
+      <div className="App">
+        <Routes>
+          <Route path="/" element={<MainPage />} />
+          <Route path="/sub" element={<SubPage />} />
+        </Routes>
+      </div>
+    </Router>
+  );
 }
 
 export default App;

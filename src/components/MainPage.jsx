@@ -1,8 +1,17 @@
 import React from 'react';
 import './MainPage.css';
 import { FaBook, FaQuestion, FaInfoCircle } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 function MainPage() {
+  // useNavigate 훅을 사용하여 페이지 이동 함수 가져오기
+  const navigate = useNavigate();
+
+  // 상품조회 버튼 클릭 시 SubPage로 이동하는 함수
+  const goToSubPage = () => {
+    navigate('/sub'); // '/sub' 경로로 이동
+  };
+
   return (
     <div className="main-container">
       <div className="main-content">
@@ -16,7 +25,8 @@ function MainPage() {
             <span>구매내역</span>
           </button>
           
-          <button className="main-button">
+          {/* 상품조회 버튼에 클릭 이벤트 추가 */}
+          <button className="main-button" onClick={goToSubPage}>
             <FaBook className="button-icon" />
             <span>상품조회</span>
           </button>
