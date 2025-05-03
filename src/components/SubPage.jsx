@@ -3,6 +3,7 @@ import './SubPage.css';
 
 const SubPage = () => {
   const [books, setBooks] = useState([]);
+  const [categories, setCategories] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -11,6 +12,7 @@ const SubPage = () => {
 
   useEffect(() => {
     fetchBooks();
+    fetchCategories();
   }, [currentPage, sortOrder, activeCategory]);
 
   const fetchBooks = async () => {
@@ -32,16 +34,18 @@ const SubPage = () => {
     }
   };
 
-  const categories = [
-    { id: 'all', name: '전체' },
-    { id: 'novel', name: '소설/문학' },
-    { id: 'humanities', name: '인문/사회' },
-    { id: 'business', name: '경제/경영' },
-    { id: 'selfdev', name: '자기계발' },
-    { id: 'science', name: '과학/기술' },
-    { id: 'art', name: '예술/문화' },
-    { id: 'other', name: '기타' }
-  ];
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/categories');
+      if (!response.ok) {
+        throw new Error('카테고리 데이터를 불러오지 못했습니다.');
+      }
+      const data = await response.json();
+      setCategories([{ id: 'all', name: '전체' }, ...data]); // '전체' 카테고리 추가
+    } catch (err) {
+      console.error('카테고리 로딩 오류:', err);
+    }
+  };
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -106,8 +110,6 @@ const SubPage = () => {
           <div className="sort-options">
             <span>정렬: </span>
             <select value={sortOrder} onChange={handleSortChange}>
-              <option value="최신순">최신순</option>
-              <option value="인기순">인기순</option>
               <option value="낮은가격순">낮은가격순</option>
               <option value="높은가격순">높은가격순</option>
             </select>
@@ -119,9 +121,9 @@ const SubPage = () => {
           ) : error ? (
             <div className="error-message">{error}</div>
           ) : (
-            <div className="book-grid">
+            <div className="sub-book-grid">
               {books.map((book) => (
-                <div key={book.product_id} className="book-item">
+                <div key={book.product_id} className="sub-book-item">
                   <div className="book-image">
                     {book.image_url ? 
                       <img src={book.image_url} alt={book.product_name} /> : 
