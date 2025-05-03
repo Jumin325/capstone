@@ -33,7 +33,7 @@ CREATE TABLE `book` (
   PRIMARY KEY (`book_id`),
   KEY `product_id` (`product_id`),
   CONSTRAINT `book_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `product` (`product_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -42,7 +42,7 @@ CREATE TABLE `book` (
 
 LOCK TABLES `book` WRITE;
 /*!40000 ALTER TABLE `book` DISABLE KEYS */;
-INSERT INTO `book` VALUES (1,1,'임헌찬 외 2인','북두출판사','9791166754548','전자공학과',2024);
+INSERT INTO `book` VALUES (1,1,'임헌찬 외 2인','북두출판사','9791166754548','전자공학과',2024),(2,2,'한학근','문운당','9791156922483','전자공학과',2016),(3,3,'한학근','동일출판사','9788938111876','전자공학과',2018),(4,4,'김경희 외 1인','한빛아카데미','9791156645306','정보통신과',2021),(5,5,'김수원 외 7인','홍릉과학출판사','9788945001658','정보통신과',2017),(6,6,'이종원','한빛아카데미','9791156641599','정보통신과',2017),(7,7,'검정연구회','동일출판사','9788938116871','전기과',2024),(8,8,'손혜영','인피니티북스','9788992649919','전기과',2016),(9,9,'천인국','생능출판사','9788970506678','전기과',2023);
 /*!40000 ALTER TABLE `book` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -57,7 +57,7 @@ CREATE TABLE `order_items` (
   `order_item_id` int NOT NULL AUTO_INCREMENT,
   `order_id` int NOT NULL,
   `product_id` int NOT NULL,
-  `quantity` int NOT NULL,
+  `quantity` int NOT NULL DEFAULT '0',
   `price_per_item` decimal(10,2) NOT NULL,
   PRIMARY KEY (`order_item_id`),
   KEY `order_id` (`order_id`),
@@ -85,7 +85,6 @@ DROP TABLE IF EXISTS `orders`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `orders` (
   `order_id` int NOT NULL AUTO_INCREMENT,
-  `customer_id` int NOT NULL,
   `order_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `status` enum('준비','완료','취소') NOT NULL DEFAULT '준비',
   `total_amount` decimal(10,2) NOT NULL,
@@ -121,7 +120,7 @@ CREATE TABLE `product` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`product_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -130,7 +129,7 @@ CREATE TABLE `product` (
 
 LOCK TABLES `product` WRITE;
 /*!40000 ALTER TABLE `product` DISABLE KEYS */;
-INSERT INTO `product` VALUES (1,'전기기초실험',16000.00,'/images/1.jpg','책',10,1,'2025-05-02 17:08:31','2025-05-02 17:17:35');
+INSERT INTO `product` VALUES (1,'전기기초실험',16000.00,'/images/1.jpg','책',10,1,'2025-05-03 12:50:38','2025-05-03 12:50:38'),(2,'이론과 함께 하는 전자회로 실험',26000.00,'/images/2.jpg','책',10,1,'2025-05-03 12:50:38','2025-05-03 12:50:38'),(3,'NCS기반 전기회로 실험',22000.00,'/images/3.jpg','책',10,1,'2025-05-03 12:50:38','2025-05-03 12:50:38'),(4,'컴퓨터 활용과 실습 2019',25000.00,'/images/4.jpg','책',10,1,'2025-05-03 12:50:38','2025-05-03 12:50:38'),(5,'전자회로',42000.00,'/images/5.jpg','책',10,1,'2025-05-03 12:50:38','2025-05-03 12:50:38'),(6,'페도라리눅스 시스템&네트워크',29000.00,'/images/6.jpg','책',10,1,'2025-05-03 12:50:38','2025-05-03 12:50:38'),(7,'2025 회로이론',19800.00,'/images/7.jpg','책',10,1,'2025-05-03 12:50:38','2025-05-03 12:50:38'),(8,'LapVIEW의 정석 기본편',28000.00,'/images/8.jpg','책',10,1,'2025-05-03 12:50:38','2025-05-03 12:50:38'),(9,'쉽게 풀어쓴 C언어 Express개정 4판',32200.00,'/images/9.jpg','책',10,1,'2025-05-03 12:50:38','2025-05-03 12:50:38');
 /*!40000 ALTER TABLE `product` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -171,8 +170,6 @@ DROP TABLE IF EXISTS `stationery`;
 CREATE TABLE `stationery` (
   `stationery_id` int NOT NULL AUTO_INCREMENT,
   `product_id` int NOT NULL,
-  `brand` varchar(100) DEFAULT NULL,
-  `material` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`stationery_id`),
   KEY `product_id` (`product_id`),
   CONSTRAINT `stationery_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `product` (`product_id`)
@@ -201,4 +198,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-05-03  2:27:06
+-- Dump completed on 2025-05-03 22:30:19

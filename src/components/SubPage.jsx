@@ -1,107 +1,175 @@
-// components/SubPage.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import './SubPage.css';
 
-function SubPage() {
-  const [data, setData] = useState([]);
+const SubPage = () => {
+  const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
-  
-  // 컴포넌트가 마운트될 때 데이터 가져오기
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState('최신순');
+  const [activeCategory, setActiveCategory] = useState('all');
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // 백엔드 API에서 데이터 가져오기
-        const response = await axios.get('http://localhost:5000/api/data');
-        
-        // API 응답에서 데이터 추출
-        setData(response.data.data);
-        setLoading(false);
-      } catch (err) {
-        console.error('데이터를 불러오는 중 오류 발생:', err);
-        setError('데이터를 불러오는 데 실패했습니다.');
-        setLoading(false);
+    fetchBooks();
+  }, [currentPage, sortOrder, activeCategory]);
+
+  const fetchBooks = async () => {
+    try {
+      setLoading(true);
+      // 카테고리, 정렬, 페이지 파라미터 포함
+      const response = await fetch(`http://localhost:5000/api/data?page=${currentPage}&sort=${sortOrder}&category=${activeCategory}`);
+      if (!response.ok) {
+        throw new Error('서버에서 데이터를 가져오는데 실패했습니다.');
       }
-    };
-
-    fetchData();
-  }, []);
-
-  // 메인 페이지로 돌아가는 함수
-  const handleBackClick = () => {
-    navigate('/');
+      const result = await response.json();
+      setBooks(result.data);
+      setError(null);
+    } catch (err) {
+      setError('데이터를 불러오는 중 오류가 발생했습니다: ' + err.message);
+      console.error('API 오류:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // 로딩 중일 때 표시할 내용
-  if (loading) {
-    return <div className="loading">데이터를 불러오는 중입니다...</div>;
-  }
+  const categories = [
+    { id: 'all', name: '전체' },
+    { id: 'novel', name: '소설/문학' },
+    { id: 'humanities', name: '인문/사회' },
+    { id: 'business', name: '경제/경영' },
+    { id: 'selfdev', name: '자기계발' },
+    { id: 'science', name: '과학/기술' },
+    { id: 'art', name: '예술/문화' },
+    { id: 'other', name: '기타' }
+  ];
 
-  // 오류가 발생했을 때 표시할 내용
-  if (error) {
-    return (
-      <div className="error">
-        <p>{error}</p>
-        <button onClick={handleBackClick}>메인으로 돌아가기</button>
-      </div>
-    );
-  }
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo(0, 0);
+  };
+
+  const handleSortChange = (e) => {
+    setSortOrder(e.target.value);
+  };
+
+  const handleCategoryClick = (categoryId) => {
+    setActiveCategory(categoryId);
+    setCurrentPage(1); // 카테고리 변경 시 첫 페이지로 이동
+  };
 
   return (
-    <div className="sub-page">
-      <h1>데이터베이스 조회 결과</h1>
-      
-      {/* 데이터가 없을 경우 */}
-      {data.length === 0 ? (
-        <p>조회된 데이터가 없습니다.</p>
-      ) : (
-        // 데이터 테이블로 표시
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              {/* 데이터의 첫 번째 행의 키를 기반으로 테이블 헤더 생성 */}
-              {Object.keys(data[0]).map((key) => (
-                <th key={key} style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>
-                  {key}
-                </th>
+    <div className="bookstore-container">
+      {/* 헤더 영역 */}
+      <header className="header">
+        <div className="header-title">EasyFind </div>
+        <div className="search-box">
+          <input type="text" placeholder="도서 검색..." className="search-input" />
+          <button className="search-button">검색</button>
+        </div>
+      </header>
+
+      {/* 네비게이션 메뉴 */}
+      <nav className="nav-menu">
+        <ul>
+          <li>홈</li>
+          <li>베스트셀러</li>
+          <li>신간도서</li>
+          <li>국내도서</li>
+          <li>해외도서</li>
+          <li>eBook</li>
+          <li>오디오북</li>
+        </ul>
+      </nav>
+
+      <div className="content-container">
+        {/* 왼쪽 카테고리 사이드바 */}
+        <div className="sidebar">
+          <div className="category-section">
+            <h3>카테고리</h3>
+            <ul className="category-list">
+              {categories.map((category) => (
+                <li 
+                  key={category.id} 
+                  className={`category-item ${category.id === activeCategory ? 'active' : ''}`}
+                  onClick={() => handleCategoryClick(category.id)}
+                >
+                  {category.name}
+                </li>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {/* 데이터 행 표시 */}
-            {data.map((item, index) => (
-              <tr key={index}>
-                {Object.values(item).map((value, idx) => (
-                  <td key={idx} style={{ border: '1px solid #ddd', padding: '8px' }}>
-                    {value}
-                  </td>
-                ))}
-              </tr>
+            </ul>
+          </div>
+        </div>
+
+        {/* 메인 컨텐츠 영역 */}
+        <div className="main-content">
+          {/* 정렬 옵션 */}
+          <div className="sort-options">
+            <span>정렬: </span>
+            <select value={sortOrder} onChange={handleSortChange}>
+              <option value="최신순">최신순</option>
+              <option value="인기순">인기순</option>
+              <option value="낮은가격순">낮은가격순</option>
+              <option value="높은가격순">높은가격순</option>
+            </select>
+          </div>
+
+          {/* 책 목록 */}
+          {loading ? (
+            <div className="loading">로딩 중...</div>
+          ) : error ? (
+            <div className="error-message">{error}</div>
+          ) : (
+            <div className="book-grid">
+              {books.map((book) => (
+                <div key={book.product_id} className="book-item">
+                  <div className="book-image">
+                    {book.image_url ? 
+                      <img src={book.image_url} alt={book.product_name} /> : 
+                      <div className="placeholder">책표지</div>
+                    }
+                  </div>
+                  <div className="book-info">
+                    <h3 className="book-title">{book.product_name}</h3>
+                    {book.product_type === '책' && (
+                      <>
+                        <p className="book-author">저자: {book.author}</p>
+                        <p className="book-publisher">출판사: {book.publisher}</p>
+                      </>
+                    )}
+                    <div className="book-price">
+                      <span className="sale-price">{Number(book.price).toLocaleString()}원</span>
+                      {book.original_price && book.original_price > book.price && (
+                        <span className="original-price">{Number(book.original_price).toLocaleString()}원</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 페이지네이션 */}
+          <div className="pagination">
+            {Array.from({ length: 5 }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                className={`page-button ${currentPage === page ? 'active' : ''}`}
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </button>
             ))}
-          </tbody>
-        </table>
-      )}
-      
-      {/* 메인으로 돌아가는 버튼 */}
-      <button 
-        onClick={handleBackClick}
-        style={{
-          marginTop: '20px',
-          padding: '10px 20px',
-          fontSize: '16px',
-          backgroundColor: '#2196F3',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}
-      >
-        메인으로 돌아가기
-      </button>
+            <button 
+              className="page-button next"
+              onClick={() => handlePageChange(currentPage + 1)}
+            >
+              &gt;
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
-}
+};
 
 export default SubPage;
