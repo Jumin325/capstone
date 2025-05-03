@@ -40,8 +40,11 @@ app.get('/api/categories', (req, res) => {
       });
     }
 
-    // 단순 문자열 배열로 변환
-    const categories = results.map(row => row.category);
+    // id, name 맵 형태로 저장
+    const categories = results.map(row => ({
+      id: row.category,
+      name: row.category
+    }));
     res.json(categories);
   });
 });
