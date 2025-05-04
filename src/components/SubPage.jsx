@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './SubPage.css';
+import { useNavigate } from 'react-router-dom';
 
 const SubPage = () => {
   const [books, setBooks] = useState([]);
@@ -9,6 +10,12 @@ const SubPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOrder, setSortOrder] = useState('최신순');
   const [activeCategory, setActiveCategory] = useState('all');
+
+  const navigate = useNavigate();
+  //메인 페이지로 이동
+  const goToMainPage = () => {
+    navigate('/'); // '/sub' 경로로 이동
+  };
 
   useEffect(() => {
     fetchBooks();
@@ -65,7 +72,7 @@ const SubPage = () => {
     <div className="bookstore-container">
       {/* 헤더 영역 */}
       <header className="header">
-        <div className="header-title">EasyFind </div>
+        <div className="header-title" onClick={goToMainPage} style={{ cursor: 'pointer'}}> EasyFind </div>
         <div className="search-box">
           <input type="text" placeholder="도서 검색..." className="search-input" />
           <button className="search-button">검색</button>
@@ -75,13 +82,11 @@ const SubPage = () => {
       {/* 네비게이션 메뉴 */}
       <nav className="nav-menu">
         <ul>
-          <li>홈</li>
-          <li>베스트셀러</li>
-          <li>신간도서</li>
-          <li>국내도서</li>
-          <li>해외도서</li>
-          <li>eBook</li>
-          <li>오디오북</li>
+          <li>메인</li>
+          <li>도서 목록</li>
+          <li>장바구니</li>
+          <li>예약내역</li>
+          <li>문의하기</li>
         </ul>
       </nav>
 
@@ -143,8 +148,14 @@ const SubPage = () => {
                       {book.original_price && book.original_price > book.price && (
                         <span className="original-price">{Number(book.original_price).toLocaleString()}원</span>
                       )}
-                    </div>
+                      <div className="book-button-container">
+                        {/*장바구니 담기 버튼*/}
+                        <button className="add-to-cart-button" onClick={'*'}>장바구니</button>
+                        {/* 바로구매 버튼 */}
+                        <button className="buy-now-button" onClick={'*'}>바로구매</button>
+                      </div>
                   </div>
+                </div>
                 </div>
               ))}
             </div>
