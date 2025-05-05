@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import './SubPage.css';
-import { useNavigate } from 'react-router-dom';
+import './BookPage.css';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-const SubPage = () => {
+const BookPage = () => {
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]); 
   const [loading, setLoading] = useState(true);
@@ -12,9 +12,14 @@ const SubPage = () => {
   const [activeCategory, setActiveCategory] = useState('all');
 
   const navigate = useNavigate();
-  //메인 페이지로 이동
+  const location = useLocation();
+
   const goToMainPage = () => {
-    navigate('/'); // '/sub' 경로로 이동
+    navigate('/'); // 메인 페이지로 이동
+  };
+
+  const goToCartPage = () => {
+    navigate('/cart'); // 장바구니 페이지로 이동
   };
 
   useEffect(() => {
@@ -22,6 +27,7 @@ const SubPage = () => {
     fetchCategories();
   }, [currentPage, sortOrder, activeCategory]);
 
+  //책 내용 생성
   const fetchBooks = async () => {
     try {
       setLoading(true);
@@ -40,7 +46,8 @@ const SubPage = () => {
       setLoading(false);
     }
   };
-
+  
+  //카테고리 생성
   const fetchCategories = async () => {
     try {
       const response = await fetch('http://localhost:5000/api/categories');
@@ -54,20 +61,49 @@ const SubPage = () => {
     }
   };
 
+  //페이지 전환
   const handlePageChange = (page) => {
     setCurrentPage(page);
     window.scrollTo(0, 0);
   };
 
+  //재고 정렬순
   const handleSortChange = (e) => {
     setSortOrder(e.target.value);
   };
 
+  //카테고리 선택
   const handleCategoryClick = (categoryId) => {
     setActiveCategory(categoryId);
     setCurrentPage(1); // 카테고리 변경 시 첫 페이지로 이동
   };
 
+  //장바구니 추가
+  const handleAddToCart = async (product_id) => {
+    try {
+      // 장바구니에 추가할 상품의 수량
+      const quantity = 1;
+
+      const response = await fetch('http://localhost:5000/api/cart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ product_id, quantity }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('장바구니에 아이템을 추가하는데 실패했습니다.');
+      }
+  
+      const data = await response.json();
+      alert(data.message);
+    } catch (error) {
+      console.error('장바구니 추가 오류:', error);
+    }
+  };
+  
   return (
     <div className="bookstore-container">
       {/* 헤더 영역 */}
@@ -82,9 +118,15 @@ const SubPage = () => {
       {/* 네비게이션 메뉴 */}
       <nav className="nav-menu">
         <ul>
-          <li>메인</li>
-          <li>도서 목록</li>
-          <li>장바구니</li>
+          <li
+           className={location.pathname === '/' ? 'active' : ''}
+           onClick={goToMainPage}>메인</li>
+          <li
+            className={location.pathname === '/book' ? 'active' : ''}
+            onClick={() => navigate('/book')}>도서 목록</li>
+          <li 
+          className={location.pathname === '/Cart' ? 'active' : ''}
+          onClick={goToCartPage}>장바구니</li>
           <li>예약내역</li>
           <li>문의하기</li>
         </ul>
@@ -150,9 +192,7 @@ const SubPage = () => {
                       )}
                       <div className="book-button-container">
                         {/*장바구니 담기 버튼*/}
-                        <button className="add-to-cart-button" onClick={'*'}>장바구니</button>
-                        {/* 바로구매 버튼 */}
-                        <button className="buy-now-button" onClick={'*'}>바로구매</button>
+                        <button className="add-to-cart-button" onClick={() => handleAddToCart(book.product_id)}>장바구니</button>
                       </div>
                   </div>
                 </div>
@@ -185,4 +225,4 @@ const SubPage = () => {
   );
 };
 
-export default SubPage;
+export default BookPage;

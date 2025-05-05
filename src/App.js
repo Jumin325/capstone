@@ -2,7 +2,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainPage from './components/MainPage';
-import SubPage from './components/SubPage';
+import BookPage from './components/BookPage';
+import CartPage from './components/CartPage';
 
 function App() {
   return (
@@ -10,7 +11,8 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/" element={<MainPage />} />
-          <Route path="/sub" element={<SubPage />} />
+          <Route path="/book" element={<BookPage />} />
+          <Route path="/Cart" element={<CartPage />} />
         </Routes>
       </div>
     </Router>

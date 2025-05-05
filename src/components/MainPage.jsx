@@ -8,8 +8,8 @@ function MainPage() {
   const navigate = useNavigate();
 
   // 상품조회 버튼 클릭 시 SubPage로 이동하는 함수
-  const goToSubPage = () => {
-    navigate('/sub'); // '/sub' 경로로 이동
+  const goToBookPage = () => {
+    navigate('/book'); // '/sub' 경로로 이동
   };
 
   return (
@@ -26,7 +26,7 @@ function MainPage() {
           </button>
           
           {/* 상품조회 버튼에 클릭 이벤트 추가 */}
-          <button className="main-button" onClick={goToSubPage}>
+          <button className="main-button" onClick={goToBookPage}>
             <FaBook className="button-icon" />
             <span>상품조회</span>
           </button>
