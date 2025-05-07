@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './BookPage.css'; // 기존 CSS 재사용
+import './BookPage.css';
 import { useNavigate } from 'react-router-dom';
 
 const CartPage = () => {
@@ -7,35 +7,30 @@ const CartPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [totalAmount, setTotalAmount] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sessionId, setSessionId] = useState('');
 
   const navigate = useNavigate();
 
-  const goToMainPage = () => {
-    navigate('/'); // 메인 페이지로 이동
-  };
-
-  const goToBookPage = () => {
-    navigate('/book'); // 도서 목록 페이지로 이동
-  };
+  const goToMainPage = () => navigate('/');
+  const goToBookPage = () => navigate('/book');
 
   useEffect(() => {
     fetchCartItems();
   }, []);
 
-  // 장바구니 아이템 불러오기
   const fetchCartItems = async () => {
     try {
       setLoading(true);
       const response = await fetch('http://localhost:5000/api/cart', {
-        credentials: 'include' // 세션 쿠키 포함
+        credentials: 'include',
       });
-      
-      if (!response.ok) {
-        throw new Error('장바구니 정보를 가져오는데 실패했습니다.');
-      }
-      
+
+      if (!response.ok) throw new Error('장바구니 정보를 가져오는데 실패했습니다.');
+
       const result = await response.json();
       setCartItems(result.items || []);
+      setSessionId(result.session_id || '');
       calculateTotal(result.items || []);
       setError(null);
     } catch (err) {
@@ -46,39 +41,30 @@ const CartPage = () => {
     }
   };
 
-  // 총 금액 계산
   const calculateTotal = (items) => {
     const total = items.reduce((sum, item) => sum + (item.price_per_item * item.quantity), 0);
     setTotalAmount(total);
   };
 
-  // 수량 변경 처리
   const handleQuantityChange = async (orderItemId, newQuantity) => {
-    if (newQuantity < 1) return; // 최소 수량은 1
+    if (newQuantity < 1) return;
 
     try {
       const response = await fetch(`http://localhost:5000/api/cart/item/${orderItemId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ quantity: newQuantity }),
       });
 
-      if (!response.ok) {
-        throw new Error('수량 변경에 실패했습니다.');
-      }
+      if (!response.ok) throw new Error('수량 변경 실패');
 
-      // 성공하면 장바구니 다시 불러오기
       fetchCartItems();
     } catch (error) {
-      console.error('수량 변경 오류:', error);
-      alert('수량 변경에 실패했습니다: ' + error.message);
+      alert('수량 변경 실패: ' + error.message);
     }
   };
 
-  // 장바구니 아이템 삭제
   const handleRemoveItem = async (orderItemId) => {
     try {
       const response = await fetch(`http://localhost:5000/api/cart/item/${orderItemId}`, {
@@ -86,43 +72,60 @@ const CartPage = () => {
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        throw new Error('아이템 삭제에 실패했습니다.');
-      }
+      if (!response.ok) throw new Error('삭제 실패');
 
-      // 성공하면 장바구니 다시 불러오기
       fetchCartItems();
-      alert('상품이 장바구니에서 삭제되었습니다.');
+      alert('상품이 삭제되었습니다.');
     } catch (error) {
-      console.error('아이템 삭제 오류:', error);
-      alert('아이템 삭제에 실패했습니다: ' + error.message);
+      alert('삭제 실패: ' + error.message);
     }
   };
 
-  // 주문 처리
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
+
+  const confirmPayment = async () => {
+    if (!sessionId) {
+      alert('세션 정보가 없습니다.');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:5000/api/checkout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+
+      if (!response.ok) throw new Error('서버 응답 실패');
+
+      alert('결제가 완료되었습니다.');
+      setIsModalOpen(false);
+      fetchCartItems();
+    } catch (error) {
+      alert('결제 처리 중 오류가 발생했습니다: ' + error.message);
+    }
+  };
+
   const handleCheckout = () => {
     if (cartItems.length === 0) {
       alert('장바구니에 상품이 없습니다.');
       return;
     }
-    
-    // 여기에 결제 페이지로 이동하는 로직 추가
-    alert('주문 처리 페이지로 이동합니다.');
-    // navigate('/checkout');
+    openModal();
   };
 
   return (
     <div className="bookstore-container">
-      {/* 헤더 영역 */}
       <header className="header">
-        <div className="header-title" onClick={goToMainPage} style={{ cursor: 'pointer'}}> EasyFind </div>
+        <div className="header-title" onClick={goToMainPage} style={{ cursor: 'pointer' }}>EasyFind</div>
         <div className="search-box">
           <input type="text" placeholder="도서 검색..." className="search-input" />
           <button className="search-button">검색</button>
         </div>
       </header>
 
-      {/* 네비게이션 메뉴 - 장바구니 메뉴에 active 클래스 추가 */}
       <nav className="nav-menu">
         <ul>
           <li onClick={goToMainPage}>메인</li>
@@ -133,10 +136,9 @@ const CartPage = () => {
         </ul>
       </nav>
 
-      {/* 장바구니 콘텐츠 영역 */}
       <div className="cart-container">
         <h2 className="cart-title">장바구니</h2>
-        
+
         {loading ? (
           <div className="loading">로딩 중...</div>
         ) : error ? (
@@ -144,14 +146,11 @@ const CartPage = () => {
         ) : cartItems.length === 0 ? (
           <div className="empty-cart">
             <p>장바구니가 비어 있습니다.</p>
-            <button className="continue-shopping-btn" onClick={goToBookPage}>
-              쇼핑 계속하기
-            </button>
+            <button className="continue-shopping-btn" onClick={goToBookPage}>쇼핑 계속하기</button>
           </div>
         ) : (
           <div className="cart-content">
             <div className="cart-items">
-              {/* 장바구니 헤더 */}
               <div className="cart-header">
                 <div className="cart-header-item product-info">상품정보</div>
                 <div className="cart-header-item">수량</div>
@@ -159,16 +158,14 @@ const CartPage = () => {
                 <div className="cart-header-item">합계</div>
                 <div className="cart-header-item">삭제</div>
               </div>
-              
-              {/* 장바구니 아이템 목록 */}
+
               {cartItems.map((item) => (
                 <div key={item.order_item_id} className="cart-item">
                   <div className="product-info">
                     <div className="product-image">
-                      {item.image_url ? 
+                      {item.image_url ?
                         <img src={item.image_url} alt={item.product_name} /> :
-                        <div className="placeholder">상품 이미지</div>
-                      }
+                        <div className="placeholder">상품 이미지</div>}
                     </div>
                     <div className="product-details">
                       <h3>{item.product_name}</h3>
@@ -176,38 +173,22 @@ const CartPage = () => {
                       {item.publisher && <p>출판사: {item.publisher}</p>}
                     </div>
                   </div>
-                  
+
                   <div className="quantity-controls">
-                    <button 
-                      onClick={() => handleQuantityChange(item.order_item_id, item.quantity - 1)}
-                      disabled={item.quantity <= 1}
-                    >
-                      -
-                    </button>
+                    <button onClick={() => handleQuantityChange(item.order_item_id, item.quantity - 1)} disabled={item.quantity <= 1}>-</button>
                     <span>{item.quantity}</span>
-                    <button 
-                      onClick={() => handleQuantityChange(item.order_item_id, item.quantity + 1)}
-                    >
-                      +
-                    </button>
+                    <button onClick={() => handleQuantityChange(item.order_item_id, item.quantity + 1)}>+</button>
                   </div>
-                  
-                  <div className="price">
-                    {Number(item.price_per_item).toLocaleString()}원
-                  </div>
-                  
-                  <div className="item-total">
-                    {Number(item.price_per_item * item.quantity).toLocaleString()}원
-                  </div>
-                  
+
+                  <div className="price">{Number(item.price_per_item).toLocaleString()}원</div>
+                  <div className="item-total">{Number(item.price_per_item * item.quantity).toLocaleString()}원</div>
                   <div className="remove-item">
                     <button onClick={() => handleRemoveItem(item.order_item_id)}>삭제</button>
                   </div>
                 </div>
               ))}
             </div>
-            
-            {/* 결제 정보 */}
+
             <div className="order-summary">
               <div className="summary-line">
                 <span>총 상품금액</span>
@@ -217,20 +198,36 @@ const CartPage = () => {
                 <span>결제 예정금액</span>
                 <span>{Number(totalAmount).toLocaleString()}원</span>
               </div>
-              <button 
-                className="checkout-button" 
-                onClick={handleCheckout}
-                disabled={cartItems.length === 0}
-              >
+              <button className="checkout-button" onClick={handleCheckout} disabled={cartItems.length === 0}>
                 결제하기
               </button>
-              <button className="continue-shopping" onClick={goToBookPage}>
-                쇼핑 계속하기
-              </button>
+              <button className="continue-shopping" onClick={goToBookPage}>쇼핑 계속하기</button>
             </div>
           </div>
         )}
       </div>
+
+      {/* 모달 팝업 */}
+      {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>결제 확인</h3>
+            <p>총 결제 금액: {Number(totalAmount).toLocaleString()}원</p>
+            <div className="modal-buttons">
+              <button
+                type="button"
+                onClick={() => {
+                  console.log('✅ 확인 버튼 작동');
+                  confirmPayment();
+                }}
+              >
+                확인
+              </button>
+              <button type="button" onClick={closeModal}>취소</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

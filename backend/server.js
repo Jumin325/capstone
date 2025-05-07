@@ -3,7 +3,6 @@ const cors = require('cors');
 const session = require('express-session');
 const app = express();
 const connection = require('./db');
-
 // CORS 옵션 설정
 const corsOptions = {
   origin: 'http://localhost:3000',  // React 앱의 도메인
@@ -68,11 +67,17 @@ app.get('/api/data', (req, res) => {
   const offset = (page - 1) * limit;
   const category = req.query.category;
   const sort = req.query.sort || '최신순';
+  const productType = req.query.product_type || '책'; // 기본값은 '책'
 
   // SQL WHERE 조건 구성
   let whereClause = 'p.is_active = TRUE';
-  if (category && category !== 'all') {
-    whereClause += ` AND b.category = ?`;
+  if (productType === '책') {
+    whereClause += ' AND p.product_type = "책"';
+    if (category && category !== 'all') {
+      whereClause += ' AND b.category = ?';
+    }
+  } else if (productType === '문구류') {
+    whereClause += ' AND p.product_type = "문구류"';
   }
 
   // SQL ORDER BY 구성
@@ -101,7 +106,7 @@ app.get('/api/data', (req, res) => {
 
   // 파라미터 배열 구성
   let queryParams = [];
-  if (category && category !== 'all') {
+  if (productType === '책' && category && category !== 'all') {
     queryParams.push(category);
   }
   queryParams.push(limit, offset);
@@ -126,7 +131,7 @@ app.get('/api/data', (req, res) => {
 
     // 카운트 쿼리 파라미터
     let countParams = [];
-    if (category && category !== 'all') {
+    if (productType === '책' && category && category !== 'all') {
       countParams.push(category);
     }
 
@@ -425,14 +430,15 @@ app.delete('/api/cart/item/:id', (req, res) => {
 // 헤더 검색 기능
 app.get('/api/search', (req, res) => {
   const searchQuery = req.query.query || '';
+  const productType = req.query.product_type || '책'; // 기본은 책
 
   const query = `
     SELECT p.*, b.author, b.publisher, b.category
     FROM product p
     LEFT JOIN book b ON p.product_id = b.product_id
-    WHERE p.product_name LIKE ?
+    WHERE p.product_name LIKE ? AND p.product_type = ?
   `;
-  const params = [`%${searchQuery}%`];
+  const params = [`%${searchQuery}%`, productType];
 
   connection.query(query, params, (err, results) => {
     if (err) {

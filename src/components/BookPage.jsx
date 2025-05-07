@@ -15,6 +15,7 @@ const BookPage = () => {
   const [keyword, setKeyword] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [activeProductType, setActiveProductType] = useState('책'); // 기본은 책
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,7 +32,7 @@ const BookPage = () => {
   useEffect(() => {
     fetchBooks();
     fetchCategories();
-  }, [currentPage, sortOrder, activeCategory]);
+  }, [currentPage, sortOrder, activeCategory, activeProductType]);
 
   //검색 기록에 따른 결과 불러오기
   useEffect(() => {
@@ -46,17 +47,17 @@ const BookPage = () => {
     try {
       setLoading(true);
       // 카테고리, 정렬, 페이지 파라미터 포함
-      const response = await fetch(`http://localhost:5000/api/data?page=${currentPage}&sort=${sortOrder}&category=${activeCategory}`);
+      const response = await fetch(`http://localhost:5000/api/data?page=${currentPage}&sort=${sortOrder}&category=${activeCategory}&product_type=${activeProductType}`);
       if (!response.ok) {
         throw new Error('서버에서 데이터를 가져오는데 실패했습니다.');
       }
       const result = await response.json();
-      
+
       // 전체 아이템 수와 페이지 수 계산
       const totalCount = result.pagination?.total || 0;
       const calculatedPages = Math.ceil(totalCount / 9);
       setTotalPages(Math.max(1, calculatedPages));
-      
+
       setBooks(result.data);
       setTotalPages(calculatedPages);
       setError(null);
@@ -67,7 +68,7 @@ const BookPage = () => {
       setLoading(false);
     }
   };
-  
+
   //카테고리 생성
   const fetchCategories = async () => {
     try {
@@ -76,7 +77,7 @@ const BookPage = () => {
         throw new Error('카테고리 데이터를 불러오지 못했습니다.');
       }
       const data = await response.json();
-      setCategories([{ id: 'all', name: '전체' }, ...data]); // '전체' 카테고리 추가
+      setCategories(data); // 주석 유지
     } catch (err) {
       console.error('카테고리 로딩 오류:', err);
     }
@@ -114,11 +115,11 @@ const BookPage = () => {
         credentials: 'include',
         body: JSON.stringify({ product_id, quantity }),
       });
-  
+
       if (!response.ok) {
         throw new Error('장바구니에 아이템을 추가하는데 실패했습니다.');
       }
-  
+
       const data = await response.json();
       alert(data.message);
     } catch (error) {
@@ -140,14 +141,17 @@ const BookPage = () => {
   
     try {
       const response = await axios.get('http://localhost:5000/api/search', {
-        params: { query: trimmedKeyword }
+        params: {
+          query: trimmedKeyword,
+          product_type: activeProductType, // 선택된 유형 (책 or 문구류)
+        }
       });
       setSearchResults(response.data.data);
     } catch (error) {
       console.error('검색 실패:', error);
     }
   };
-  
+
   return (
     <div className="bookstore-container">
       {/* 헤더 영역 */}
@@ -192,18 +196,54 @@ const BookPage = () => {
       <div className="content-container">
         {/* 왼쪽 카테고리 사이드바 */}
         <div className="sidebar">
+          {/* 책 카테고리 영역 */}
           <div className="category-section">
             <h3>카테고리</h3>
             <ul className="category-list">
-              {categories.map((category) => (
-                <li 
-                  key={category.id} 
-                  className={`category-item ${category.id === activeCategory ? 'active' : ''}`}
-                  onClick={() => handleCategoryClick(category.id)}
-                >
-                  {category.name}
-                </li>
-              ))}
+              {/* 전체 (책 전체) */}
+              <li
+                className={`category-item ${activeProductType === '책' && activeCategory === 'all' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveProductType('책');
+                  setActiveCategory('all');
+                  setCurrentPage(1);
+                }}
+              >
+                전체
+              </li>
+
+              {/* 책 카테고리 목록 */}
+              {activeProductType === '책' &&
+                categories.map((category) => (
+                  <li
+                    key={category.id}
+                    className={`category-item ${category.id === activeCategory ? 'active' : ''}`}
+                    onClick={() => {
+                      setActiveCategory(category.id);
+                      setActiveProductType('책');
+                      setCurrentPage(1);
+                    }}
+                  >
+                    {category.name}
+                  </li>
+                ))}
+            </ul>
+          </div>
+
+          {/* 문구류 카테고리 분리 영역 */}
+          <div style={{ marginTop: '30px' }} className="category-section">
+            <h3>문구류</h3>
+            <ul className="category-list">
+              <li
+                className={`category-item ${activeProductType === '문구류' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveProductType('문구류');
+                  setActiveCategory('all');
+                  setCurrentPage(1);
+                }}
+              >
+                문구류
+              </li>
             </ul>
           </div>
         </div>
