@@ -8,6 +8,7 @@ const BookPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [sortOrder, setSortOrder] = useState('최신순');
   const [activeCategory, setActiveCategory] = useState('all');
 
@@ -37,7 +38,14 @@ const BookPage = () => {
         throw new Error('서버에서 데이터를 가져오는데 실패했습니다.');
       }
       const result = await response.json();
+      
+      // 전체 아이템 수와 페이지 수 계산
+      const totalCount = result.pagination?.total || 0;
+      const calculatedPages = Math.ceil(totalCount / 9);
+      setTotalPages(Math.max(1, calculatedPages));
+      
       setBooks(result.data);
+      setTotalPages(calculatedPages);
       setError(null);
     } catch (err) {
       setError('데이터를 불러오는 중 오류가 발생했습니다: ' + err.message);
@@ -63,6 +71,7 @@ const BookPage = () => {
 
   //페이지 전환
   const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
     window.scrollTo(0, 0);
   };
@@ -203,7 +212,10 @@ const BookPage = () => {
 
           {/* 페이지네이션 */}
           <div className="pagination">
-            {Array.from({ length: 5 }, (_, i) => i + 1).map((page) => (
+            <button className="page-button prev" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
+              &lt;
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <button
                 key={page}
                 className={`page-button ${currentPage === page ? 'active' : ''}`}
@@ -212,10 +224,7 @@ const BookPage = () => {
                 {page}
               </button>
             ))}
-            <button 
-              className="page-button next"
-              onClick={() => handlePageChange(currentPage + 1)}
-            >
+            <button className="page-button next" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>
               &gt;
             </button>
           </div>
