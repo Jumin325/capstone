@@ -601,3 +601,11 @@
   font-size: 16px;
   cursor: pointer;
 }
+
+.no-results {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px;
+  font-size: 1.2rem;
+  color: #888;
+}

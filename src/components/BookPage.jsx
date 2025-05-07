@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './BookPage.css';
 import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 
 const BookPage = () => {
   const [books, setBooks] = useState([]);
@@ -11,6 +12,9 @@ const BookPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [sortOrder, setSortOrder] = useState('최신순');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [keyword, setKeyword] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,10 +27,19 @@ const BookPage = () => {
     navigate('/cart'); // 장바구니 페이지로 이동
   };
 
+  //책 목록과 카테고리 불러오기
   useEffect(() => {
     fetchBooks();
     fetchCategories();
   }, [currentPage, sortOrder, activeCategory]);
+
+  //검색 기록에 따른 결과 불러오기
+  useEffect(() => {
+    if (keyword.trim() === '') {
+      setSearchResults([]);
+      setIsSearching(false); // 검색중이 아니게 설정
+    }
+  }, [keyword]);
 
   //책 내용 생성
   const fetchBooks = async () => {
@@ -112,6 +125,28 @@ const BookPage = () => {
       console.error('장바구니 추가 오류:', error);
     }
   };
+
+  //헤더 상단 검색 기능
+  const handleSearch = async () => {
+    const trimmedKeyword = keyword.trim();
+  
+    if (!trimmedKeyword) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+  
+    setIsSearching(true);
+  
+    try {
+      const response = await axios.get('http://localhost:5000/api/search', {
+        params: { query: trimmedKeyword }
+      });
+      setSearchResults(response.data.data);
+    } catch (error) {
+      console.error('검색 실패:', error);
+    }
+  };
   
   return (
     <div className="bookstore-container">
@@ -119,8 +154,21 @@ const BookPage = () => {
       <header className="header">
         <div className="header-title" onClick={goToMainPage} style={{ cursor: 'pointer'}}> EasyFind </div>
         <div className="search-box">
-          <input type="text" placeholder="도서 검색..." className="search-input" />
-          <button className="search-button">검색</button>
+          <input
+            type="text"
+            placeholder="도서 검색..."
+            className="search-input"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSearch();
+              }
+            }}
+          />
+          <button className="search-button" onClick={handleSearch}>
+            검색
+          </button>
         </div>
       </header>
 
@@ -171,20 +219,24 @@ const BookPage = () => {
             </select>
           </div>
 
-          {/* 책 목록 */}
-          {loading ? (
-            <div className="loading">로딩 중...</div>
-          ) : error ? (
-            <div className="error-message">{error}</div>
-          ) : (
-            <div className="sub-book-grid">
-              {books.map((book) => (
+        {/* 책 목록 */}
+        {loading ? (
+          <div className="loading">로딩 중...</div>
+        ) : error ? (
+          <div className="error-message">{error}</div>
+        ) : (
+          <div className="sub-book-grid">
+            {isSearching && searchResults.length === 0 ? (
+              <div className="no-results">없는 상품입니다.</div>
+            ) : (
+              (isSearching ? searchResults : books).map((book) => (
                 <div key={book.product_id} className="sub-book-item">
                   <div className="book-image">
-                    {book.image_url ? 
-                      <img src={book.image_url} alt={book.product_name} /> : 
+                    {book.image_url ? (
+                      <img src={book.image_url} alt={book.product_name} />
+                    ) : (
                       <div className="placeholder">책표지</div>
-                    }
+                    )}
                   </div>
                   <div className="book-info">
                     <h3 className="book-title">{book.product_name}</h3>
@@ -200,15 +252,17 @@ const BookPage = () => {
                         <span className="original-price">{Number(book.original_price).toLocaleString()}원</span>
                       )}
                       <div className="book-button-container">
-                        {/*장바구니 담기 버튼*/}
-                        <button className="add-to-cart-button" onClick={() => handleAddToCart(book.product_id)}>장바구니</button>
+                        <button className="add-to-cart-button" onClick={() => handleAddToCart(book.product_id)}>
+                          장바구니
+                        </button>
                       </div>
+                    </div>
                   </div>
                 </div>
-                </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
+        )}
 
           {/* 페이지네이션 */}
           <div className="pagination">

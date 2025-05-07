@@ -1,8 +1,8 @@
 const express = require('express');
-const mysql = require('mysql2');
 const cors = require('cors');
 const session = require('express-session');
 const app = express();
+const connection = require('./db');
 
 // CORS 옵션 설정
 const corsOptions = {
@@ -14,14 +14,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// MySQL 연결 설정
-const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '1234',
-  database: 'capstone'
-});
 
 //비회원 세션 기능
 app.use(session({
@@ -42,15 +34,6 @@ app.get('/api/session', (req, res) => {
   } else {
     res.send({ session: 'inactive' }); // 세션이 없으면
   }
-});
-
-// 연결 테스트
-connection.connect(error => {
-  if (error) {
-    console.error('MySQL 연결 오류:', error);
-    return;
-  }
-  console.log('MySQL 데이터베이스에 성공적으로 연결되었습니다.');
 });
 
 // 카테고리 조회 API 엔드포인트 - book 테이블의 category 값 조회
@@ -439,23 +422,25 @@ app.delete('/api/cart/item/:id', (req, res) => {
   });
 });
 
-//헤드쪽 검색 기능
-app.get('/api/search', async (req, res) => {
-  const searchQuery = req.query.query || '';  // 검색어
+// 헤더 검색 기능
+app.get('/api/search', (req, res) => {
+  const searchQuery = req.query.query || '';
 
-  try {
-    // 검색어를 포함한 상품을 LIKE 연산자를 사용하여 검색
-    const query = 'SELECT * FROM product WHERE product_name LIKE ?';
-    const params = [`%${searchQuery}%`];  // 검색어에 %를 붙여서 부분 일치를 찾음
+  const query = `
+    SELECT p.*, b.author, b.publisher, b.category
+    FROM product p
+    LEFT JOIN book b ON p.product_id = b.product_id
+    WHERE p.product_name LIKE ?
+  `;
+  const params = [`%${searchQuery}%`];
 
-    const [rows] = await db.promise().execute(query, params);
-
-    // 검색된 결과 반환
-    res.json({ data: rows });
-  } catch (err) {
-    console.error('상품 검색 오류:', err);
-    res.status(500).json({ error: '상품 검색에 실패했습니다.' });
-  }
+  connection.query(query, params, (err, results) => {
+    if (err) {
+      console.error('상품 검색 오류:', err);
+      return res.status(500).json({ error: '상품 검색에 실패했습니다.' });
+    }
+    res.json({ data: results });
+  });
 });
 
 // 서버 실행
