@@ -439,6 +439,25 @@ app.delete('/api/cart/item/:id', (req, res) => {
   });
 });
 
+//헤드쪽 검색 기능
+app.get('/api/search', async (req, res) => {
+  const searchQuery = req.query.query || '';  // 검색어
+
+  try {
+    // 검색어를 포함한 상품을 LIKE 연산자를 사용하여 검색
+    const query = 'SELECT * FROM product WHERE product_name LIKE ?';
+    const params = [`%${searchQuery}%`];  // 검색어에 %를 붙여서 부분 일치를 찾음
+
+    const [rows] = await db.promise().execute(query, params);
+
+    // 검색된 결과 반환
+    res.json({ data: rows });
+  } catch (err) {
+    console.error('상품 검색 오류:', err);
+    res.status(500).json({ error: '상품 검색에 실패했습니다.' });
+  }
+});
+
 // 서버 실행
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`서버 실행 중: 포트 ${PORT}`));
