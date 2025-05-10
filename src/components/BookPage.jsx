@@ -67,7 +67,7 @@ const BookPage = () => {
     }
   };
 
-  const handleSearch = async () => {
+const handleSearch = async () => {
     const trimmedKeyword = keyword.trim();
     if (!trimmedKeyword) {
       setSearchResults([]);
@@ -82,6 +82,7 @@ const BookPage = () => {
         params: {
           query: trimmedKeyword,
           product_type: activeProductType,
+          category_id: activeCategory,
         },
       });
       setSearchResults(response.data.data);

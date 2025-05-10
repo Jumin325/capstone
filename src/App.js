@@ -6,6 +6,8 @@ import BookPage from './components/BookPage';
 import CartPage from './components/CartPage';
 import OrderDetails from './components/OrderDetails';
 import ReservationPage from './components/ReservationPage';
+import InquiryPage from './components/InquiryPage';
+
 
 function App() {
   return (
@@ -17,6 +19,7 @@ function App() {
           <Route path="/cart" element={<CartPage />} />
           <Route path="/order-details/:orderId" element={<OrderDetails />} />
           <Route path="/reservation" element={<ReservationPage />} />
+          <Route path="/inquiry" element={<InquiryPage />} />
         </Routes>
       </div>
     </Router>

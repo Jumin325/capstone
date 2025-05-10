@@ -343,15 +343,22 @@ app.delete('/api/cart/item/:id', async (req, res) => {
   }
 });
 // 검색 API
+// 검색 API
 app.get('/api/search', async (req, res) => {
   const searchQuery = req.query.query || '';
   const productType = req.query.product_type || '책';
+  const category = req.query.category_id || '';
 
   try {
     const db = await initDB();
 
-    const whereClause = `p.product_name LIKE ? AND p.product_type = ?`;
+    let whereClause = `p.product_name LIKE ? AND p.product_type = ?`;
     const params = [`%${searchQuery}%`, productType];
+
+    if (category && category !== '전체' && category !== 'all') {
+      whereClause += ` AND b.category = ?`;
+      params.push(category);
+    }
 
     const query = `
       SELECT 
@@ -371,6 +378,7 @@ app.get('/api/search', async (req, res) => {
     res.status(500).json({ error: '검색 실패', message: err.message });
   }
 });
+
 
 
 // 주문 상세 조회
