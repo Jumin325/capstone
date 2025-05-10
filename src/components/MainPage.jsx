@@ -11,6 +11,10 @@ function MainPage() {
   const goToBookPage = () => {
     navigate('/book'); // '/sub' 경로로 이동
   };
+  const goToReservationPage = () => {
+    navigate('/reservation'); 
+  };
+
 
   return (
     <div className="main-container">
@@ -20,7 +24,7 @@ function MainPage() {
         </header>
         
         <div className="button-section">
-          <button className="main-button">
+          <button className="main-button" onClick={goToReservationPage}>
             <FaBook className="button-icon" />
             <span>구매내역</span>
           </button>

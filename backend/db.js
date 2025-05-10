@@ -1,11 +1,13 @@
-// db.js
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 
-const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '1234',
-  database: 'capstone'
-});
+async function initDB() {
+  const connection = await mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '1234',
+    database: 'capstone'
+  });
+  return connection;
+}
 
-module.exports = connection;
+module.exports = initDB;

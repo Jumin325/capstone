@@ -8,12 +8,15 @@ const CartPage = () => {
   const [error, setError] = useState(null);
   const [totalAmount, setTotalAmount] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [phoneLastDigits, setPhoneLastDigits] = useState('');
   const [sessionId, setSessionId] = useState('');
-
+  const [keyword, setKeyword] = useState('');
   const navigate = useNavigate();
 
   const goToMainPage = () => navigate('/');
   const goToBookPage = () => navigate('/book');
+  const goToReservationPage = () => navigate('/reservation');
 
   useEffect(() => {
     fetchCartItems();
@@ -83,6 +86,8 @@ const CartPage = () => {
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
+  const openPhoneModal = () => setShowPhoneModal(true);
+  const closePhoneModal = () => setShowPhoneModal(false);
 
   const confirmPayment = async () => {
     if (!sessionId) {
@@ -91,20 +96,53 @@ const CartPage = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/checkout', {
+      const response = await fetch('http://localhost:5000/api/complete-order', {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId }),
+        credentials: 'include',
+        body: JSON.stringify({ sessionId }),
       });
+      const result = await response.json();
 
-      if (!response.ok) throw new Error('서버 응답 실패');
-
-      alert('결제가 완료되었습니다.');
-      setIsModalOpen(false);
-      fetchCartItems();
+      if (result.success && result.orderId) {
+        setIsModalOpen(false);
+        openPhoneModal(); // 전화번호 입력 모달로 이동
+      } else {
+        alert('결제는 되었지만 주문번호를 가져오는 데 실패했습니다.');
+      }
     } catch (error) {
       alert('결제 처리 중 오류가 발생했습니다: ' + error.message);
+    }
+  };
+
+  const submitPhoneNumber = async () => {
+    if (!/^\d{4}$/.test(phoneLastDigits)) {
+      alert('전화번호 뒷자리 4자리를 정확히 입력하세요.');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:5000/api/save-phone', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          sessionId,
+          phone_tail: phoneLastDigits
+        })
+      });
+
+      const result = await response.json();
+      if (result.success && result.orderId) {
+        setShowPhoneModal(false);
+        navigate(`/order-details/${result.orderId}`);
+      } else {
+        alert('전화번호 저장에 실패했습니다.');
+      }
+    } catch (error) {
+      alert('서버 오류: ' + error.message);
     }
   };
 
@@ -115,7 +153,6 @@ const CartPage = () => {
     }
     openModal();
   };
-
   return (
     <div className="bookstore-container">
       <header className="header">
@@ -131,7 +168,7 @@ const CartPage = () => {
           <li onClick={goToMainPage}>메인</li>
           <li onClick={goToBookPage}>도서 목록</li>
           <li className="active">장바구니</li>
-          <li>예약내역</li>
+          <li onClick={goToReservationPage}>예약내역</li>
           <li>문의하기</li>
         </ul>
       </nav>
@@ -157,15 +194,15 @@ const CartPage = () => {
                 <div className="cart-header-item">가격</div>
                 <div className="cart-header-item">합계</div>
                 <div className="cart-header-item">삭제</div>
-              </div>
-
-              {cartItems.map((item) => (
+              </div>              {cartItems.map((item) => (
                 <div key={item.order_item_id} className="cart-item">
                   <div className="product-info">
                     <div className="product-image">
-                      {item.image_url ?
-                        <img src={item.image_url} alt={item.product_name} /> :
-                        <div className="placeholder">상품 이미지</div>}
+                      {item.image_url ? (
+                        <img src={item.image_url} alt={item.product_name} />
+                      ) : (
+                        <div className="placeholder">상품 이미지</div>
+                      )}
                     </div>
                     <div className="product-details">
                       <h3>{item.product_name}</h3>
@@ -207,29 +244,44 @@ const CartPage = () => {
         )}
       </div>
 
-      {/* 모달 팝업 */}
+      {/* 결제 확인 모달 */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>결제 확인</h3>
             <p>총 결제 금액: {Number(totalAmount).toLocaleString()}원</p>
             <div className="modal-buttons">
-              <button
-                type="button"
-                onClick={() => {
-                  console.log('✅ 확인 버튼 작동');
-                  confirmPayment();
-                }}
-              >
-                확인
-              </button>
-              <button type="button" onClick={closeModal}>취소</button>
+              <button onClick={confirmPayment}>확인</button>
+              <button onClick={closeModal}>취소</button>
             </div>
           </div>
         </div>
       )}
+
+      {/* 전화번호 입력 모달 */}
+      {showPhoneModal && (
+  <div className="modal-overlay">
+    <div className="modal-content" style={{ textAlign: 'center', padding: '20px' }}>
+      <h3 style={{ marginBottom: '10px' }}>전화번호 뒷자리 4자리를 입력해주세요</h3>
+      <input
+        type="text"
+        maxLength="4"
+        value={phoneLastDigits}
+        onChange={(e) => setPhoneLastDigits(e.target.value)}
+        placeholder="예: 1234"
+        style={{ width: '100px', textAlign: 'center', fontSize: '1.2em', marginBottom: '15px' }}
+      />
+      <div className="modal-buttons" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '10px' }}>
+        <button onClick={submitPhoneNumber}>확인</button>
+        <button onClick={closePhoneModal}>취소</button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
 
 export default CartPage;
+
