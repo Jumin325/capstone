@@ -236,6 +236,7 @@ app.post('/api/complete-order', async (req, res) => {
   try {
     const db = await initDB();
 
+    // 준비 상태 주문을 완료로 변경
     await db.query(
       `UPDATE orders
        SET status = '완료',
@@ -245,8 +246,7 @@ app.post('/api/complete-order', async (req, res) => {
     );
 
     const [rows] = await db.query(
-      `SELECT order_id
-       FROM orders
+      `SELECT order_id FROM orders
        WHERE session_id = ? AND status = '완료'
        ORDER BY order_date DESC
        LIMIT 1`,
@@ -258,13 +258,36 @@ app.post('/api/complete-order', async (req, res) => {
       return res.status(500).json({ success: false, error: '주문 ID 조회 실패' });
     }
 
-    res.json({ success: true, orderId: rows[0].order_id });
+    const orderId = rows[0].order_id;
+
+    // ✅ 총 금액 계산
+    const [sumResult] = await db.query(
+      `SELECT SUM(quantity * price_per_item) AS total FROM order_items WHERE order_id = ?`,
+      [orderId]
+    );
+    const totalAmount = sumResult[0].total || 0;
+
+    // ✅ orders 테이블에 total_amount 저장
+    await db.query(
+      `UPDATE orders SET total_amount = ? WHERE order_id = ?`,
+      [totalAmount, orderId]
+    );
+
+    // ✅ receipts 테이블 초기화
+    await db.query(`
+      INSERT INTO receipts (order_id, receipt_status)
+      VALUES (?, '대기')
+      ON DUPLICATE KEY UPDATE receipt_status = '대기'
+    `, [orderId]);
+
+    res.json({ success: true, orderId });
     await db.end();
   } catch (err) {
     console.error('주문 상태 업데이트 오류:', err);
     res.status(500).json({ success: false, error: 'DB update 실패' });
   }
 });
+
 
 // 수량 변경
 app.put('/api/cart/item/:id', async (req, res) => {
@@ -478,10 +501,11 @@ app.get('/api/reservation', async (req, res) => {
   try {
     const connection = await initDB();
 
-    // 1. 주문 목록 조회 (완료 상태만)
+    // 1. 주문 목록 조회 (완료 상태만) - total_amount 포함
     const [orders] = await connection.query(
-      `SELECT o.order_id, o.order_date 
+      `SELECT o.order_id, o.order_date, o.total_amount, r.receipt_status
        FROM orders o
+       LEFT JOIN receipts r ON o.order_id = r.order_id
        WHERE o.phone = ? AND o.status = '완료'
        ORDER BY o.order_date DESC`,
       [phoneTail]
@@ -491,10 +515,10 @@ app.get('/api/reservation', async (req, res) => {
       return res.json({ success: false, message: '조회된 주문이 없습니다.' });
     }
 
-    // 2. 각 주문에 대한 대표 상품, 총 가격, 총 수량 정보 추가
+    // 2. 각 주문에 대한 대표 상품, 총 수량 정보 추가
     const enrichedOrders = await Promise.all(
       orders.map(async (order) => {
-        // 대표 상품 1개 조회
+        // 대표 상품
         const [items] = await connection.query(
           `SELECT p.product_name
            FROM order_items oi
@@ -504,26 +528,23 @@ app.get('/api/reservation', async (req, res) => {
           [order.order_id]
         );
 
-        // 총 가격과 총 수량 계산
-// 백엔드 내 /api/reservation 핸들러에서 각 주문에 대해 추가
-const [summary] = await connection.query(
-  `SELECT SUM(oi.quantity * oi.price_per_item) as total_amount, SUM(oi.quantity) as total_quantity
-   FROM order_items oi
-   WHERE oi.order_id = ?`,
-  [order.order_id]
-);
+        // 총 수량만 계산
+        const [summary] = await connection.query(
+          `SELECT SUM(oi.quantity) as total_quantity
+           FROM order_items oi
+           WHERE oi.order_id = ?`,
+          [order.order_id]
+        );
 
-return {
-  ...order,
-  representative_product: items[0]?.product_name || '상품 없음',
-  total_amount: summary[0]?.total_amount || 0,
-  total_quantity: summary[0]?.total_quantity || 0
-};
-
+        return {
+          ...order,
+          representative_product: items[0]?.product_name || '상품 없음',
+          total_quantity: summary[0]?.total_quantity || 0
+        };
       })
     );
 
-    // 3. 응답
+    // 3. 응답 전송
     res.json({ success: true, orders: enrichedOrders });
   } catch (err) {
     console.error('예약 내역 조회 실패:', err);
@@ -650,6 +671,48 @@ app.get('/api/data', async (req, res) => {
   } catch (error) {
     console.error('데이터 조회 오류:', error);
     res.status(500).json({ error: '데이터베이스 오류', details: error.message });
+  }
+});
+
+// ✅ [유지] 주문 수령 상태 처리 (있으면 UPDATE, 없으면 INSERT)
+app.post('/api/receipt/complete', async (req, res) => {
+  const { orderId } = req.body;
+
+  if (!orderId) {
+    return res.status(400).json({ success: false, error: 'orderId가 필요합니다.' });
+  }
+
+  try {
+    const db = await initDB();
+
+    // receipt 존재 여부 확인
+    const [check] = await db.query(
+      `SELECT * FROM receipts WHERE order_id = ?`,
+      [orderId]
+    );
+
+    if (check.length === 0) {
+      // 없다면 새로 삽입
+      await db.query(
+        `INSERT INTO receipts (order_id, receipt_status, receipt_date)
+         VALUES (?, '수령', CURRENT_TIMESTAMP)`,
+        [orderId]
+      );
+    } else {
+      // 있다면 상태만 업데이트
+      await db.query(
+        `UPDATE receipts
+         SET receipt_status = '수령', receipt_date = CURRENT_TIMESTAMP
+         WHERE order_id = ?`,
+        [orderId]
+      );
+    }
+
+    res.json({ success: true, message: '수령 완료 처리됨' });
+    await db.end();
+  } catch (err) {
+    console.error('수령 상태 업데이트 오류:', err);
+    res.status(500).json({ success: false, error: 'DB 오류' });
   }
 });
 

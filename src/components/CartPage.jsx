@@ -17,6 +17,8 @@ const CartPage = () => {
   const goToMainPage = () => navigate('/');
   const goToBookPage = () => navigate('/book');
   const goToReservationPage = () => navigate('/reservation');
+  const goToInquiryPage = () => navigate('/inquiry');
+
 
   useEffect(() => {
     fetchCartItems();
@@ -169,7 +171,7 @@ const CartPage = () => {
           <li onClick={goToBookPage}>도서 목록</li>
           <li className="active">장바구니</li>
           <li onClick={goToReservationPage}>예약내역</li>
-          <li>문의하기</li>
+          <li onClick={goToInquiryPage}>문의하기</li>
         </ul>
       </nav>
 

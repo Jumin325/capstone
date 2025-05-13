@@ -15,6 +15,7 @@ const ReservationPage = () => {
   const goToBookPage = () => navigate('/book');
   const goToCartPage = () => navigate('/cart');
   const goToReservationPage = () => navigate('/reservation');
+  const goToInquiryPage = () => navigate('/inquiry');
 
   const fetchOrders = async () => {
     try {
@@ -40,6 +41,39 @@ const ReservationPage = () => {
     fetchOrders();
   };
 
+const handleComplete = async (orderId) => {
+  try {
+    const response = await fetch('http://localhost:5000/api/receipt/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId })
+    });
+
+    if (response.ok) {
+      // ✅ 수령 상태를 갱신
+      setSelectedOrder(prev => ({
+        ...prev,
+        receipt_status: '수령',
+        receipt_date: new Date().toISOString()
+      }));
+
+      // ✅ 카드 목록도 갱신
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.order_id === orderId
+            ? { ...order, receipt_status: '수령' }
+            : order
+        )
+      );
+    } else {
+      alert('수령 처리 실패');
+    }
+  } catch (error) {
+    console.error('수령 처리 오류:', error);
+  }
+};
+
+
   return (
     <div className="bookstore-container">
       {/* 헤더 */}
@@ -58,7 +92,7 @@ const ReservationPage = () => {
           <li onClick={goToBookPage}>도서 목록</li>
           <li onClick={goToCartPage}>장바구니</li>
           <li className="active" onClick={goToReservationPage}>예약내역</li>
-          <li>문의하기</li>
+          <li onClick={goToInquiryPage}>문의하기</li>
         </ul>
       </nav>
 
@@ -86,25 +120,37 @@ const ReservationPage = () => {
       )}
 
       {/* 주문 목록 카드 */}
-      {!showModal && (
-        <div className="book-list">
-          {orders.map((order) => (
-            <div
-              key={order.order_id}
-              className="book-card"
-              onClick={() => setSelectedOrder(order)}
-              style={{ cursor: 'pointer' }}
-            >
-              <div className="book-title">주문번호: {order.order_id}</div>
-              <p className="book-author">대표 상품: {order.representative_product}</p>
-              <p className="book-publisher">주문일자: {new Date(order.order_date).toLocaleString('ko-KR')}</p>
-              <p className="book-price">총 수량: {order.total_quantity}개 </p>
-              <p className="book-price">총 금액: {Math.round(order.total_amount).toLocaleString()}원</p>
-              <button className="add-to-cart-btn">상세보기</button>
-            </div>
-          ))}
-        </div>
-      )}
+{!showModal && (
+  <div className="book-list">
+    {orders.map((order) => (
+      <div
+        key={order.order_id}
+        className="book-card"
+        onClick={() => setSelectedOrder(order)}
+        style={{ cursor: 'pointer' }}
+      >
+        <div className="book-title">주문번호: {order.order_id}</div>
+        <p className="book-author">대표 상품: {order.representative_product}</p>
+        <p className="book-publisher">
+          주문일자: {new Date(order.order_date).toLocaleString('ko-KR')}
+        </p>
+<p className="book-price">총 수량 : {order.total_quantity}개</p>
+<p className="book-price">총 금액 : {Math.round(order.total_amount).toLocaleString()}원</p>
+
+        <p className="book-price">
+          수령 여부:{" "}
+          <strong
+            style={{ color: order.receipt_status === "수령" ? "green" : "orange" }}
+          >
+            {order.receipt_status === "수령" ? "수령" : "대기"}
+          </strong>
+        </p>
+        <button className="add-to-cart-btn">상세보기</button>
+      </div>
+    ))}
+  </div>
+)}
+
 
       {/* 상세 모달 */}
       {selectedOrder && (
@@ -121,8 +167,24 @@ const ReservationPage = () => {
                 </li>
               ))}
             </ul>
-            <p>총 수량: {selectedOrder.total_quantity}개</p>
-            <p className="order-amount">총 금액: <span>{Math.round(selectedOrder.total_amount).toLocaleString()}원</span></p>
+<p>총 수량: {selectedOrder.total_quantity}개</p>
+<p className="order-amount">
+  총 금액: <span>{Math.round(selectedOrder.total_amount).toLocaleString()}원</span>
+</p>
+
+<p className={`receipt-status ${selectedOrder.receipt_status === '수령' ? 'done' : 'waiting'}`}>
+  수령 여부: {selectedOrder.receipt_status}
+</p>
+
+{selectedOrder.receipt_status !== '수령' && (
+  <button
+    className="complete-receipt-btn"
+    onClick={() => handleComplete(selectedOrder.order_id)}
+  >
+    수령 완료
+  </button>
+)}
+
             <div className="qr-box">
               <QRCodeCanvas value={`order:${selectedOrder.order_id}`} size={120} />
             </div>

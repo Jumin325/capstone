@@ -198,10 +198,11 @@
 .book-author,
 .book-publisher,
 .book-price {
-  font-size: 14px;
-  margin: 4px 0;
-  color: #333;
+  display: block;         /* ✅ 줄바꿈 가능하게 함 */
+  white-space: normal;    /* ✅ 줄바꿈 허용 */
+  margin: 4px 0;          /* ✅ 간격도 추가 */
 }
+
 
 .add-to-cart-btn {
   background-color: #0b65c6;
@@ -290,4 +291,37 @@
 .qr-box {
   margin-top: 15px;
   text-align: center;
+}
+.receipt-status {
+  font-size: 14px;
+  font-weight: bold;
+  margin-top: 6px;
+}
+
+.receipt-status.done {
+  color: green;
+  font-weight: bold;
+}
+
+.receipt-status.waiting {
+  color: orange;
+}
+
+
+.complete-receipt-btn {
+  margin-top: 12px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.2s;
+}
+
+.complete-receipt-btn:hover {
+  background-color: #218838;
 }

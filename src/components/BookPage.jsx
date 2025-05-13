@@ -24,6 +24,7 @@ const BookPage = () => {
   const goToMainPage = () => navigate('/');
   const goToCartPage = () => navigate('/cart');
   const goToReservationPage = () => navigate('/reservation');
+  const goToInquiryPage = () => navigate('/inquiry');
 
   useEffect(() => {
     if (!isSearching) {
@@ -146,7 +147,7 @@ const handleSearch = async () => {
           <li className={location.pathname === '/book' ? 'active' : ''} onClick={() => navigate('/book')}>도서 목록</li>
           <li className={location.pathname === '/cart' ? 'active' : ''} onClick={goToCartPage}>장바구니</li>
           <li className={location.pathname === '/reservation' ? 'active' : ''} onClick={goToReservationPage}>예약내역</li>
-          <li>문의하기</li>
+          <li className={location.pathname === '/inquiry' ? 'active' : ''} onClick={goToInquiryPage}>문의하기</li>
         </ul>
       </nav>
 

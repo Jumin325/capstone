@@ -1,61 +1,117 @@
-.order-details-wrapper {
-  background-color: #f0f2f5;
-  min-height: 100vh;
-  padding: 50px 0;
+/* OrderDetails.css */
+
+.main-container {
   font-family: 'Noto Sans KR', sans-serif;
+  background-color: #0d0d0d;
+  color: #ffffff;
+  min-height: 100vh;
 }
 
-.order-card {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 40px 30px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  animation: fadeIn 0.3s ease-in-out;
+/* 헤더 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #121212;
+  padding: 10px 20px;
 }
 
-.order-card h2 {
-  font-size: 22px;
-  margin-bottom: 12px;
+.logo {
+  font-size: 20px;
   font-weight: bold;
-  color: #222;
+  color: white;
 }
 
-.order-card p {
+.nav {
+  display: flex;
+  gap: 20px;
+}
+
+.nav button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
   font-size: 14px;
-  color: #555;
-  margin-bottom: 20px;
+}
+
+.nav button:hover {
+  text-decoration: underline;
+}
+
+.search-bar {
+  display: flex;
+  background-color: #333;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.search-bar input {
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  color: white;
+}
+
+.search-bar input::placeholder {
+  color: #aaa;
+}
+
+.search-bar button {
+  background-color: #9c7200;
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+/* 콘텐츠 구조 */
+.content-container {
+  display: flex;
+  padding: 20px;
+  gap: 20px;
+}
+
+.sidebar-placeholder {
+  width: 200px;
+}
+
+.order-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+/* 주문 카드 */
+.order-card {
+  background-color: #1e1e1e;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.order-card h2,
+.order-card h3 {
+  margin-bottom: 10px;
 }
 
 .order-list {
   list-style: none;
   padding: 0;
   margin: 20px 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  text-align: left;
 }
 
 .order-list li {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin-bottom: 8px;
   font-size: 15px;
-  margin: 6px 0;
-  color: #333;
 }
 
 .icon-box {
-  margin-right: 6px;
-}
-
-.order-card h3 {
-  font-size: 18px;
-  margin: 20px 0 10px;
-  color: #000;
-  font-weight: bold;
+  margin-right: 8px;
 }
 
 .qr-box {
@@ -65,23 +121,25 @@
 .close-btn {
   background-color: #007bff;
   color: white;
-  padding: 10px 24px;
   border: none;
-  border-radius: 6px;
-  cursor: pointer;
+  padding: 10px 20px;
   font-size: 14px;
-  transition: background-color 0.2s ease;
-  margin-top: 10px;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .close-btn:hover {
   background-color: #0056b3;
 }
+.center-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 60px 0 80px; /* 상단 여백 추가됨 */
+}
 
-/* 상단 헤더 & 네비게이션은 기존 유지 */
-
-/* 애니메이션 */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(15px); }
-  to { opacity: 1; transform: translateY(0); }
+.order-align-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 60px 20px;
 }

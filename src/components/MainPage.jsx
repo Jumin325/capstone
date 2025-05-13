@@ -12,10 +12,6 @@ const MainPage = () => {
         <div className="hero-content">
           <h1>EasyFind Bookstore</h1>
           <p>지식의 여정을 더 쉽고 빠르게.</p>
-          <div className="hero-search">
-            <input type="text" placeholder="도서명 또는 문구 검색..." />
-            <button><FaSearch /></button>
-          </div>
         </div>
       </section>
 
