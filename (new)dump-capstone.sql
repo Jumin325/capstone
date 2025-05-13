@@ -64,7 +64,7 @@ CREATE TABLE `order_items` (
   KEY `product_id` (`product_id`),
   CONSTRAINT `order_items_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`),
   CONSTRAINT `order_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `product` (`product_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -73,7 +73,6 @@ CREATE TABLE `order_items` (
 
 LOCK TABLES `order_items` WRITE;
 /*!40000 ALTER TABLE `order_items` DISABLE KEYS */;
-INSERT INTO `order_items` VALUES (1,1,1,1,16000.00);
 /*!40000 ALTER TABLE `order_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -93,7 +92,7 @@ CREATE TABLE `orders` (
   `phone` varchar(13) DEFAULT NULL,
   `session_id` varchar(255) NOT NULL,
   PRIMARY KEY (`order_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -102,7 +101,6 @@ CREATE TABLE `orders` (
 
 LOCK TABLES `orders` WRITE;
 /*!40000 ALTER TABLE `orders` DISABLE KEYS */;
-INSERT INTO `orders` VALUES (1,'2025-05-07 04:24:38','준비',NULL,0.00,NULL,'v9fl8l5YeFmZ9gNmlkl9Q-XjDOLPgHvq');
 /*!40000 ALTER TABLE `orders` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -165,31 +163,6 @@ LOCK TABLES `receipts` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `stationery`
---
-
-DROP TABLE IF EXISTS `stationery`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `stationery` (
-  `stationery_id` int NOT NULL AUTO_INCREMENT,
-  `product_id` int NOT NULL,
-  PRIMARY KEY (`stationery_id`),
-  KEY `product_id` (`product_id`),
-  CONSTRAINT `stationery_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `product` (`product_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `stationery`
---
-
-LOCK TABLES `stationery` WRITE;
-/*!40000 ALTER TABLE `stationery` DISABLE KEYS */;
-/*!40000 ALTER TABLE `stationery` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Dumping routines for database 'capstone'
 --
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -202,4 +175,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-05-07 14:49:17
+-- Dump completed on 2025-05-13  9:51:49
