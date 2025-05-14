@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const initDB = require('./db');  // mysql2/promise 연결
+const bcrypt = require('bcrypt');
 
 const app = express();
 
@@ -716,6 +717,76 @@ app.post('/api/receipt/complete', async (req, res) => {
   }
 });
 
+// 질의응답 질문 등록하기
+app.post('/api/questions', async (req, res) => {
+  const { question, password } = req.body;
+  if (!question || !password) {
+    return res.status(400).json({ error: '질문과 비밀번호는 필수입니다.' });
+  }
+
+  try {
+    const db = await initDB();
+    const hashed = await bcrypt.hash(password, 10);
+
+    const [result] = await db.query(
+      'INSERT INTO questions (question, passwd) VALUES (?, ?)',
+      [question.trim(), hashed]
+    );
+
+    res.json({ insertId: result.insertId });
+    await db.end();
+  } catch (err) {
+    console.error('질문 등록 오류:', err);
+    res.status(500).json({ error: 'DB 오류' });
+  }
+});
+
+// 질문 목록 불러오기
+app.get('/api/questions', async (req, res) => {
+  try {
+    const db = await initDB();
+    const [rows] = await db.query('SELECT question_id, question FROM questions ORDER BY question_id DESC');
+    res.json(rows);
+    await db.end();
+  } catch (err) {
+    console.error('질문 목록 조회 오류:', err);
+    res.status(500).json({ error: 'DB 오류' });
+  }
+});
+
+// 질문에 비밀번호 확인
+app.post('/api/questions/verify', async (req, res) => {
+  const { questionId, password } = req.body;
+
+  if (!questionId || !password) {
+    return res.status(400).json({ error: '질문 ID와 비밀번호가 필요합니다.' });
+  }
+
+  try {
+    const db = await initDB();
+    const [rows] = await db.query(
+      'SELECT passwd, answer FROM questions WHERE question_id = ?',
+      [questionId]
+    );
+
+    if (rows.length === 0) {
+      await db.end();
+      return res.status(404).json({ error: '질문이 존재하지 않습니다.' });
+    }
+
+    const match = await bcrypt.compare(password, rows[0].passwd);
+    if (!match) {
+      await db.end();
+      return res.status(401).json({ error: '비밀번호가 일치하지 않습니다.' });
+    }
+
+    res.json({ answer: rows[0].answer || '아직 답변이 등록되지 않았습니다.' });
+    await db.end();
+  } catch (err) {
+    console.error('답변 열람 오류:', err);
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
 
 // 서버 실행
 const PORT = process.env.PORT || 5000;

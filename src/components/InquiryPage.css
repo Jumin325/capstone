@@ -267,3 +267,29 @@
   cursor: pointer;
   font-size: 14px;
 }
+
+/* 질문 목록 스타일*/
+.question-list {
+  margin-top: 30px;
+}
+
+.faq-item {
+  border: 1px solid #ddd;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.faq-item:hover {
+  background-color: #f9f9f9;
+}
+
+.faq-question {
+  font-weight: bold;
+}
+
+.faq-answer {
+  margin-top: 8px;
+  color: #555;
+}
