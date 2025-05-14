@@ -1,0 +1,67 @@
+/* components/Header.css */
+
+.header {
+  background-color: #121212;
+  color: white;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-title {
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.search-box {
+  display: flex;
+  background-color: #222;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.search-input {
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  color: white;
+}
+
+.search-input::placeholder {
+  color: #aaa;
+}
+
+.search-button {
+  background-color: #0052cc;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.nav-menu {
+  background-color: #f8f9fa;
+  border-top: 1px solid #e1e1e1;
+  border-bottom: 1px solid #e1e1e1;
+}
+
+.nav-menu ul {
+  display: flex;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  justify-content: center;
+}
+
+.nav-menu li {
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+.nav-menu li.active {
+  background-color: #0077a3;
+  color: white;
+  font-weight: bold;
+}

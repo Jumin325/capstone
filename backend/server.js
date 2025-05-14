@@ -788,6 +788,39 @@ app.post('/api/questions/verify', async (req, res) => {
   }
 });
 
+// 내 질문 확인
+app.post('/api/my-questions', async (req, res) => {
+  const { password } = req.body;
+
+  if (!password) {
+    return res.status(400).json({ error: '비밀번호를 입력하세요' });
+  }
+
+  try {
+    const db = await initDB();
+    const [rows] = await db.query('SELECT question_id, question, answer, passwd FROM questions');
+
+    const matchedQuestions = [];
+
+    for (const row of rows) {
+      const match = await bcrypt.compare(password, row.passwd);
+      if (match) {
+        matchedQuestions.push({
+          question_id: row.question_id,
+          question: row.question,
+          answer: row.answer
+        });
+      }
+    }
+
+    await db.end();
+    res.json({ questions: matchedQuestions });
+  } catch (err) {
+    console.error('내 문의 조회 오류:', err);
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
 // 서버 실행
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

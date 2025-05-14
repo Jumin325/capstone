@@ -293,3 +293,30 @@
   margin-top: 8px;
   color: #555;
 }
+
+/* 내 문의 확인하기 버튼 */
+.check-my-questions-button {
+  background-color: #28a745; /* 초록 */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.check-my-questions-button:hover {
+  background-color: #218838; /* hover 시 어두운 초록 */
+}
+
+.empty-question-box {
+  text-align: center;
+  padding: 20px 0;
+  margin-top: 10px;
+  color: #ccc;
+  font-size: 1rem;
+  font-style: normal;
+  border: none;
+  background-color: transparent;
+}

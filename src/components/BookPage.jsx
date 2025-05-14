@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './BookPage.css';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import Header from '../components/Header'; // ✅ 공통 헤더 추가
 
 const BookPage = () => {
   const [books, setBooks] = useState([]);
@@ -17,15 +18,6 @@ const BookPage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [activeProductType, setActiveProductType] = useState('책');
   
-
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const goToMainPage = () => navigate('/');
-  const goToCartPage = () => navigate('/cart');
-  const goToReservationPage = () => navigate('/reservation');
-  const goToInquiryPage = () => navigate('/inquiry');
-
   useEffect(() => {
     if (!isSearching) {
       fetchBooks();
@@ -117,39 +109,8 @@ const handleSearch = async () => {
   };
 
   return (
-    <div className="bookstore-container">
-      {/* 헤더 */}
-      <header className="header">
-        <div className="header-title" onClick={goToMainPage} style={{ cursor: 'pointer' }}>
-          EasyFind
-        </div>
-        <div className="search-box">
-          <input
-            type="text"
-            placeholder="도서 검색..."
-            className="search-input"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSearch();
-            }}
-          />
-          <button className="search-button" onClick={handleSearch}>
-            검색
-          </button>
-        </div>
-      </header>
-
-      {/* 네비게이션 */}
-      <nav className="nav-menu">
-        <ul>
-          <li className={location.pathname === '/' ? 'active' : ''} onClick={goToMainPage}>메인</li>
-          <li className={location.pathname === '/book' ? 'active' : ''} onClick={() => navigate('/book')}>도서 목록</li>
-          <li className={location.pathname === '/cart' ? 'active' : ''} onClick={goToCartPage}>장바구니</li>
-          <li className={location.pathname === '/reservation' ? 'active' : ''} onClick={goToReservationPage}>예약내역</li>
-          <li className={location.pathname === '/inquiry' ? 'active' : ''} onClick={goToInquiryPage}>문의하기</li>
-        </ul>
-      </nav>
+<div className="bookstore-container">
+      <Header keyword={keyword} setKeyword={setKeyword} onSearch={handleSearch} />
 
       <div className="content-container">
         {/* 사이드바 */}

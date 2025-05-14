@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './BookPage.css';
 import { useNavigate } from 'react-router-dom';
+import Header from '../components/Header';
 
 const CartPage = () => {
   const [cartItems, setCartItems] = useState([]);
@@ -12,13 +13,10 @@ const CartPage = () => {
   const [phoneLastDigits, setPhoneLastDigits] = useState('');
   const [sessionId, setSessionId] = useState('');
   const [keyword, setKeyword] = useState('');
+  
   const navigate = useNavigate();
 
-  const goToMainPage = () => navigate('/');
   const goToBookPage = () => navigate('/book');
-  const goToReservationPage = () => navigate('/reservation');
-  const goToInquiryPage = () => navigate('/inquiry');
-
 
   useEffect(() => {
     fetchCartItems();
@@ -157,23 +155,7 @@ const CartPage = () => {
   };
   return (
     <div className="bookstore-container">
-      <header className="header">
-        <div className="header-title" onClick={goToMainPage} style={{ cursor: 'pointer' }}>EasyFind</div>
-        <div className="search-box">
-          <input type="text" placeholder="도서 검색..." className="search-input" />
-          <button className="search-button">검색</button>
-        </div>
-      </header>
-
-      <nav className="nav-menu">
-        <ul>
-          <li onClick={goToMainPage}>메인</li>
-          <li onClick={goToBookPage}>도서 목록</li>
-          <li className="active">장바구니</li>
-          <li onClick={goToReservationPage}>예약내역</li>
-          <li onClick={goToInquiryPage}>문의하기</li>
-        </ul>
-      </nav>
+        <Header keyword={keyword} setKeyword={setKeyword} />
 
       <div className="cart-container">
         <h2 className="cart-title">장바구니</h2>

@@ -1,145 +1,85 @@
-/* OrderDetails.css */
-
-.main-container {
-  font-family: 'Noto Sans KR', sans-serif;
-  background-color: #0d0d0d;
-  color: #ffffff;
+.order-details-page {
+  background-color: #f7f7f7;
   min-height: 100vh;
+  padding: 40px 20px;
+  font-family: 'Noto Sans KR', sans-serif;
 }
 
-/* 헤더 */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #121212;
-  padding: 10px 20px;
-}
-
-.logo {
-  font-size: 20px;
-  font-weight: bold;
-  color: white;
-}
-
-.nav {
-  display: flex;
-  gap: 20px;
-}
-
-.nav button {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.nav button:hover {
-  text-decoration: underline;
-}
-
-.search-bar {
-  display: flex;
-  background-color: #333;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.search-bar input {
-  background: transparent;
-  border: none;
-  padding: 6px 10px;
-  color: white;
-}
-
-.search-bar input::placeholder {
-  color: #aaa;
-}
-
-.search-bar button {
-  background-color: #9c7200;
-  border: none;
-  color: white;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-/* 콘텐츠 구조 */
-.content-container {
-  display: flex;
-  padding: 20px;
-  gap: 20px;
-}
-
-.sidebar-placeholder {
-  width: 200px;
-}
-
-.order-main {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-
-/* 주문 카드 */
-.order-card {
-  background-color: #1e1e1e;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-  width: 100%;
-  max-width: 400px;
+.order-container {
+  max-width: 480px;
+  margin: 0 auto;
   text-align: center;
 }
 
-.order-card h2,
-.order-card h3 {
+.order-title {
+  font-size: 1.4rem;
+  font-weight: bold;
   margin-bottom: 10px;
 }
 
+.order-divider {
+  margin-bottom: 30px;
+  border: 0;
+  height: 1px;
+  background-color: #ddd;
+}
+
+.order-card {
+  background-color: #1e1e1e;
+  color: #fff;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.order-id {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.order-date {
+  margin: 10px 0 20px;
+  color: #bbb;
+  font-size: 0.95rem;
+}
+
 .order-list {
-  list-style: none;
-  padding: 0;
-  margin: 20px 0;
   text-align: left;
+  padding-left: 0;
+  list-style: none;
+  margin-bottom: 20px;
 }
 
 .order-list li {
+  font-size: 0.95rem;
   margin-bottom: 8px;
-  font-size: 15px;
+  line-height: 1.5;
 }
 
 .icon-box {
-  margin-right: 8px;
+  margin-right: 6px;
+}
+
+.order-total {
+  margin: 20px 0;
+  font-weight: bold;
+  font-size: 1.1rem;
 }
 
 .qr-box {
-  margin: 20px 0;
+  margin-bottom: 20px;
 }
 
 .close-btn {
   background-color: #007bff;
   color: white;
   border: none;
-  padding: 10px 20px;
-  font-size: 14px;
-  border-radius: 4px;
+  padding: 10px 22px;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 1rem;
 }
 
 .close-btn:hover {
   background-color: #0056b3;
-}
-.center-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 60px 0 80px; /* 상단 여백 추가됨 */
-}
-
-.order-align-wrapper {
-  display: flex;
-  justify-content: center;
-  padding: 60px 20px;
 }

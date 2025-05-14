@@ -3,59 +3,7 @@
     color: #fff;
     min-height: 100vh;
   }
-  
-  /* 헤더 */
-  .main-header {
-    display: flex;
-    justify-content: space-between;
-    padding: 1rem 2rem;
-    background-color: #0d0d0d;
-    align-items: center;
-  }
-  
-  .logo {
-    font-size: 24px;
-    color: #fff;
-  }
-  
-  .search-box input {
-    padding: 6px;
-    background-color: #222;
-    border: none;
-    color: #fff;
-  }
-  
-  .search-box button {
-    padding: 6px 10px;
-    background-color: #0055cc;
-    border: none;
-    color: #fff;
-    margin-left: 5px;
-  }
-  
-  /* 네비게이션 */
-  .navbar {
-    background-color: #1a1a1a;
-  }
-  
-  .navbar ul {
-    display: flex;
-    list-style: none;
-    padding: 0.5rem 2rem;
-    gap: 2rem;
-  }
-  
-  .navbar li {
-    cursor: pointer;
-    color: #ccc;
-  }
-  
-  .navbar li.active {
-    color: #fff;
-    font-weight: bold;
-    border-bottom: 2px solid #007bff;
-  }
-  
+ 
   /* 전화번호 입력 모달 */
   .phone-modal {
     display: flex;

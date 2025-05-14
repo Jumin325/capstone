@@ -1,46 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './InquiryPage.css';
 import axios from 'axios';
-import { useNavigate, useLocation } from 'react-router-dom';
+import Header from '../components/Header'; // ✅ 헤더 컴포넌트 추가
 
 const InquiryPage = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const [questions, setQuestions] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [inquiry, setInquiry] = useState('');
   const [password, setPassword] = useState('');
-  const [answers, setAnswers] = useState({}); // { questionId: answer }
-
-  // 네비게이션
-  const goToMainPage = () => navigate('/');
-  const goToBookPage = () => navigate('/book');
-  const goToCartPage = () => navigate('/cart');
-  const goToReservationPage = () => navigate('/reservation');
-  const goToInquiryPage = () => navigate('/inquiry');
-
-  const fetchQuestions = async () => {
-    try {
-      const res = await axios.get('http://localhost:5000/api/questions');
-      setQuestions(res.data);
-    } catch (err) {
-      console.error('질문 목록 로딩 오류:', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchQuestions();
-  }, []);
+  const [answers, setAnswers] = useState({});
+  const [myQuestions, setMyQuestions] = useState([]);
+  const [myQuestionsVisible, setMyQuestionsVisible] = useState(false);
+  const [keyword, setKeyword] = useState(''); // ✅ 검색 입력 상태
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!inquiry.trim() || !password.trim()) {
       return alert('문의 내용과 비밀번호를 모두 입력해주세요.');
     }
-
     try {
-      const { data } = await axios.post('http://localhost:5000/api/questions', {
+      await axios.post('http://localhost:5000/api/questions', {
         question: inquiry,
         password: password
       });
@@ -48,7 +26,6 @@ const InquiryPage = () => {
       setInquiry('');
       setPassword('');
       setShowForm(false);
-      fetchQuestions();
     } catch (err) {
       console.error(err);
       alert('등록 중 오류가 발생했습니다.');
@@ -58,16 +35,28 @@ const InquiryPage = () => {
   const verifyPassword = async (questionId) => {
     const input = prompt('비밀번호를 입력하세요');
     if (!input) return;
-
     try {
       const res = await axios.post('http://localhost:5000/api/questions/verify', {
         questionId,
         password: input
       });
-
-      setAnswers(prev => ({ ...prev, [questionId]: res.data.answer }));
+      setAnswers((prev) => ({ ...prev, [questionId]: res.data.answer }));
     } catch (err) {
       alert(err.response?.data?.error || '오류가 발생했습니다.');
+    }
+  };
+
+  const handleCheckMyQuestions = async () => {
+    const input = prompt('문의 시 사용한 비밀번호를 입력하세요');
+    if (!input) return;
+    try {
+      const res = await axios.post('http://localhost:5000/api/my-questions', {
+        password: input
+      });
+      setMyQuestions(res.data.questions);
+      setMyQuestionsVisible(true);
+    } catch (err) {
+      alert(err.response?.data?.error || '문의 조회 실패');
     }
   };
 
@@ -83,31 +72,14 @@ const InquiryPage = () => {
   ];
 
   return (
-    <div>
-      {/* Header */}
-      <div className="bookstore-container">
-        <header className="header">
-          <div className="header-title" onClick={goToMainPage}>EasyFind</div>
-        </header>
+    <div className="bookstore-container">
+      {/* ✅ 공통 헤더 적용 */}
+      <Header keyword={keyword} setKeyword={setKeyword} />
 
-        {/* Navigation */}
-        <nav className="nav-menu">
-          <ul>
-            <li className={location.pathname === '/' ? 'active' : ''} onClick={goToMainPage}>메인</li>
-            <li className={location.pathname === '/book' ? 'active' : ''} onClick={goToBookPage}>도서 목록</li>
-            <li className={location.pathname === '/cart' ? 'active' : ''} onClick={goToCartPage}>장바구니</li>
-            <li className={location.pathname === '/reservation' ? 'active' : ''} onClick={goToReservationPage}>예약내역</li>
-            <li className={location.pathname === '/inquiry' ? 'active' : ''} onClick={goToInquiryPage}>문의하기</li>
-          </ul>
-        </nav>
-      </div>
-
-      {/* Main Content */}
       <main className="main-content">
-        <div className="bookstore-container inquiry-wrapper">
+        <div className="inquiry-wrapper">
           <h2 className="inquiry-title">자주 묻는 질문</h2>
 
-          {/* FAQ */}
           <div className="faq-section">
             {faqList.map((item, index) => (
               <div key={`faq-${index}`} className="faq-item">
@@ -117,7 +89,6 @@ const InquiryPage = () => {
             ))}
           </div>
 
-          {/* 글쓰기 */}
           <div className="write-section">
             <button className="write-button" onClick={() => setShowForm(!showForm)}>글쓰기</button>
             {showForm && (
@@ -139,27 +110,26 @@ const InquiryPage = () => {
                 <button type="submit">제출</button>
               </form>
             )}
+            <button className="check-my-questions-button" onClick={handleCheckMyQuestions}>내 문의 확인하기</button>
           </div>
 
-          {/* 문의 목록 */}
-          <div className="question-list">
-            <h3>문의 목록</h3>
-            {questions.map((item) => (
-              <div
-                key={item.question_id}
-                className="faq-item"
-                onClick={() => {
-                  if (answers[item.question_id]) return; // 이미 열람된 질문은 재클릭 막기
-                  verifyPassword(item.question_id);
-                }}
-              >
-                <div className="faq-question">{item.question}</div>
-                {answers[item.question_id] && (
-                  <div className="faq-answer">{answers[item.question_id]}</div>
-                )}
-              </div>
-            ))}
-          </div>
+          {myQuestionsVisible && (
+            <div className="question-list">
+              <h3>내 문의 내역</h3>
+              {myQuestions.length > 0 ? (
+                myQuestions.map((item) => (
+                  <div key={item.question_id} className="faq-item">
+                    <div className="faq-question">{item.question}</div>
+                    <div className="faq-answer">{item.answer || '답변 준비 중입니다.'}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="empty-question-box">
+                  <div className="no-questions">등록된 문의가 없습니다.</div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>
