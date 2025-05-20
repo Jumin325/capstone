@@ -1,43 +1,90 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './MainPage.css';
 import { useNavigate } from 'react-router-dom';
-import { FaSearch, FaBoxOpen, FaShoppingCart, FaClipboardList, FaHeadset, FaBook, FaStar, FaFire } from 'react-icons/fa';
+
+const bannerImages = [
+  '/images/banner1.jpg',
+  '/images/banner2.jpg',
+  '/images/banner3.jpg',
+];
 
 const MainPage = () => {
-  const navigate = useNavigate();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const navigate = useNavigate(); // ✅ 추가
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % bannerImages.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const prevSlide = () => {
+    setCurrentIndex((prev) => (prev - 1 + bannerImages.length) % bannerImages.length);
+  };
+
+  const nextSlide = () => {
+    setCurrentIndex((prev) => (prev + 1) % bannerImages.length);
+  };
 
   return (
-    <div className="main-container">
-      <section className="hero">
-        <div className="hero-content">
+    <div className="main-page">
+      <section className="main-header">
+        <div className="main-title">
           <h1>EasyFind Bookstore</h1>
           <p>지식의 여정을 더 쉽고 빠르게.</p>
         </div>
       </section>
 
-      <section className="main-menu">
-        <div className="menu-item" onClick={() => navigate('/book')}><FaBoxOpen size={28} /><span>상품 탐색</span></div>
-        <div className="menu-item" onClick={() => navigate('/cart')}><FaShoppingCart size={28} /><span>장바구니</span></div>
-        <div className="menu-item" onClick={() => navigate('/reservation')}><FaClipboardList size={28} /><span>주문 내역</span></div>
-        <div className="menu-item" onClick={() => navigate('/inquiry')}><FaHeadset size={28} /><span>고객센터</span></div>
-      </section>
+      {/* 네비게이션 버튼 */}
+      <div className="main-buttons">
+        <button onClick={() => navigate('/book')}>
+          <div className="icon">🔍</div>
+          <div className="label">상품 탐색</div>
+        </button>
+        <button onClick={() => navigate('/cart')}>
+          <div className="icon">🛒</div>
+          <div className="label">장바구니</div>
+        </button>
+        <button onClick={() => navigate('/reservation')}>
+          <div className="icon">📦</div>
+          <div className="label">주문 내역</div>
+        </button>
+        <button onClick={() => navigate('/inquiry')}>
+          <div className="icon">💬</div>
+          <div className="label">고객센터</div>
+        </button>
+      </div>
 
-      <section className="recommend-section">
-        <h2>추천 상품</h2>
-        <div className="recommend-items">
-          <div className="recommend-item"><FaBook /> 오늘의 책</div>
-          <div className="recommend-item"><FaStar /> 신간 도서</div>
-          <div className="recommend-item"><FaFire /> 인기 문구</div>
+      <section className="main-banner">
+        <div className="banner-wrapper">
+          <div className="banner-slider">
+            {bannerImages.map((src, idx) => (
+              <img
+                key={idx}
+                src={src}
+                alt={`banner-${idx}`}
+                className={`banner-img ${idx === currentIndex ? 'active' : ''}`}
+              />
+            ))}
+          </div>
+          <button className="banner-arrow left" onClick={prevSlide}>❮</button>
+          <button className="banner-arrow right" onClick={nextSlide}>❯</button>
+        </div>
+
+        <div className="banner-dots">
+          {bannerImages.map((_, idx) => (
+            <span
+              key={idx}
+              className={`dot ${idx === currentIndex ? 'active' : ''}`}
+              onClick={() => setCurrentIndex(idx)}
+            />
+          ))}
         </div>
       </section>
 
-      <section className="event-banner">
-        📢 3월 한정, 모든 상품 무료 배송 이벤트 진행 중!
-      </section>
-
-      <footer className="footer">
-        <p>© 2025 EasyFind. All rights reserved.</p>
-        <p>문의: easyfind@support.com</p>
+      <footer className="main-footer-text">
+        <p>© 2025 EasyFind. All rights reserved.<br />문의: easyfind@support.com</p>
       </footer>
     </div>
   );

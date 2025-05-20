@@ -65,3 +65,19 @@
   color: white;
   font-weight: bold;
 }
+
+.admin-login-btn {
+  margin-left: 20px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #343a40;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.admin-login-btn:hover {
+  background-color: #495057;
+}

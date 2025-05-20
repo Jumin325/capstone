@@ -17,6 +17,11 @@ const BookPage = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [activeProductType, setActiveProductType] = useState('책');
+  //여기서부턴 어드민 세션 전용
+  const isAdmin = sessionStorage.getItem('admin') === 'true';
+  const [editTarget, setEditTarget] = useState(null);
+  const [newStock, setNewStock] = useState('');
+  
   
   useEffect(() => {
     if (!isSearching) {
@@ -108,6 +113,33 @@ const handleSearch = async () => {
     window.scrollTo(0, 0);
   };
 
+  const handleStockUpdate = async () => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/products/${editTarget.product_id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stock_quantity: Number(newStock) })
+    });
+
+    if (response.ok) {
+      // 업데이트된 수량을 books 배열에도 반영
+      setBooks(prev =>
+        prev.map(b => b.product_id === editTarget.product_id
+          ? { ...b, stock_quantity: Number(newStock) }
+          : b
+        )
+      );
+      alert('수정이 완료되었습니다.');
+      setEditTarget(null);
+    } else {
+      alert('수정 실패');
+    }
+  } catch (err) {
+    console.error('재고 수정 오류:', err);
+    alert('서버 오류');
+  }
+};
+
   return (
 <div className="bookstore-container">
       <Header keyword={keyword} setKeyword={setKeyword} onSearch={handleSearch} />
@@ -187,14 +219,28 @@ const handleSearch = async () => {
                       <>
                         <p className="book-author">저자: {book.author}</p>
                         <p className="book-publisher">출판사: {book.publisher}</p>
+                        {isAdmin && (
+                          <p className="book-stock">
+                            재고 수량: <span className="stock-number">{book.stock_quantity}개</span>
+                          </p>
+                        )}
                       </>
                     )}
                     <div className="book-price">
                       <span className="sale-price">{Number(book.price).toLocaleString()}원</span>
                       <div className="book-button-container">
-                        <button className="add-to-cart-button" onClick={() => handleAddToCart(book.product_id)}>
-                          장바구니
-                        </button>
+                        {isAdmin ? (
+                          <button className="edit-button" onClick={() => {
+                                setEditTarget(book);
+                                setNewStock(book.stock_quantity.toString());
+                          }}>
+                            수정
+                          </button>
+                        ) : (
+                          <button className="add-to-cart-button" onClick={() => handleAddToCart(book.product_id)}>
+                            장바구니
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -226,6 +272,26 @@ const handleSearch = async () => {
 
         </div>
       </div>
+      {/* 재고 수량 수정 모달창 */}
+      {editTarget && (
+        <div className="modal-overlay" onClick={() => setEditTarget(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
+            <h3>📦 재고 수량 수정</h3>
+            <p><strong>{editTarget.product_name}</strong></p>
+            <input
+              type="number"
+              value={newStock}
+              onChange={(e) => setNewStock(e.target.value)}
+              min="0"
+              style={{ padding: '8px', margin: '10px 0', width: '80%' }}
+            />
+            <div style={{ marginTop: '10px' }}>
+              <button onClick={handleStockUpdate} className="reservation-button">수정 완료</button>
+              <button onClick={() => setEditTarget(null)} className="cancel-button" style={{ marginLeft: '10px' }}>취소</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

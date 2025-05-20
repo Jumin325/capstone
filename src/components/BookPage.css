@@ -600,3 +600,68 @@
   font-size: 1.2rem;
   color: #ccc;
 }
+
+/* 관리자용 수정 버튼 스타일 */
+.edit-button {
+  background-color: #ffc107;
+  color: #222;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.edit-button:hover {
+  background-color: #e0a800;
+}
+/* 재고 개수 */
+.book-stock {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 4px;
+}
+
+.stock-number {
+  color: #dc3545; /* 빨간색 */
+  font-weight: bold;
+}
+
+/* 재고 수정 모달 스타일*/
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  min-width: 300px;
+}
+
+.reservation-button {
+  background-color: #28a745;
+  color: white;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.cancel-button {
+  background-color: #6c757d;
+  color: white;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}

@@ -386,7 +386,7 @@ app.get('/api/search', async (req, res) => {
 
     const query = `
       SELECT 
-        p.product_id, p.product_name, p.price, p.image_url, p.product_type,
+        p.product_id, p.product_name, p.price, p.image_url, p.product_type, p.stock_quantity,
         b.author, b.publisher, b.category
       FROM product p
       LEFT JOIN book b ON p.product_id = b.product_id
@@ -818,6 +818,38 @@ app.post('/api/my-questions', async (req, res) => {
   } catch (err) {
     console.error('내 문의 조회 오류:', err);
     res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// 관리자 세션 실행 여부 확인
+app.post('/api/admin-session', (req, res) => {
+  const { action } = req.body;
+
+  if (action === 'login') {
+    console.log('🔐 관리자 모드 활성화됨');
+  } else if (action === 'logout') {
+    console.log('🔓 관리자 모드 종료됨');
+  }
+
+  res.sendStatus(200);
+});
+
+//관리자 BookPage 재고 수정
+app.put('/api/products/:productId', async (req, res) => {
+  const { productId } = req.params;
+  const { stock_quantity } = req.body;
+
+  try {
+    const db = await initDB(); // ✅ 누락된 DB 연결
+    await db.query(
+      'UPDATE product SET stock_quantity = ? WHERE product_id = ?',
+      [stock_quantity, productId]
+    );
+    res.send({ success: true });
+    await db.end(); // ✅ 연결 종료도 잊지 마세요
+  } catch (err) {
+    console.error('재고 수정 실패:', err);
+    res.status(500).send({ success: false });
   }
 });
 
