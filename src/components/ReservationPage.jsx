@@ -90,7 +90,7 @@ const ReservationPage = () => {
                 <button
                   type="button"
                   className="reservation-button cancel-btn"
-                  onClick={() => navigate('/book')}
+                  onClick={() => navigate('/')}
                 >
                   돌아가기
                 </button>
