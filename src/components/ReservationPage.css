@@ -273,3 +273,11 @@
 .complete-receipt-btn:hover {
   background-color: #218838;
 }
+
+.cancel-btn {
+  background-color: #fc4b4b !important;
+}
+
+.cancel-btn:hover {
+  background-color: #c94242 !important;
+}

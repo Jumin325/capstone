@@ -85,8 +85,15 @@ const ReservationPage = () => {
                 placeholder="예: 1234"
                 className="reservation-input"
               />
-              <div className="modal-buttons" style={{ marginTop: '10px' }}>
+              <div className="modal-buttons" style={{ marginTop: '10px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
                 <button type="submit" className="reservation-button">확인</button>
+                <button
+                  type="button"
+                  className="reservation-button cancel-btn"
+                  onClick={() => navigate('/book')}
+                >
+                  돌아가기
+                </button>
               </div>
             </form>
             {error && <p className="error-message">{error}</p>}

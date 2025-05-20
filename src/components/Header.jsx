@@ -6,11 +6,13 @@ import './Header.css';
 const Header = ({ keyword, setKeyword, onSearch }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isBookPage = location.pathname === '/book';
 
   return (
     <>
       <header className="header">
         <div className="header-title" onClick={() => navigate('/')}>EasyFind</div>
+         {isBookPage && (
         <div className="search-box">
           <input
             type="text"
@@ -22,6 +24,7 @@ const Header = ({ keyword, setKeyword, onSearch }) => {
           />
           <button className="search-button" onClick={onSearch}>검색</button>
         </div>
+         )}
       </header>
 
       <nav className="nav-menu">

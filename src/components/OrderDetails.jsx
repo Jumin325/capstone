@@ -42,7 +42,16 @@ const OrderDetails = () => {
 
           <div className="order-card">
             <h3 className="order-id">주문번호: ORD{orderData.orderId}</h3>
-            <p className="order-date">주문일시: {orderData.orderDate}</p>
+            <p className="order-date">
+                주문일시: {new Date(orderData.orderDate).toLocaleString('ko-KR', {
+                  timeZone: 'Asia/Seoul',
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
 
             <ul className="order-list">
               {orderData.items.map((item, index) => (

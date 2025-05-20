@@ -96,7 +96,7 @@ const InquiryPage = () => {
                 <textarea
                   value={inquiry}
                   onChange={(e) => setInquiry(e.target.value)}
-                  placeholder="문의 내용은 공개될 수 있습니다."
+                  placeholder="내용을 입력하세요."
                   rows={5}
                   required
                 />
