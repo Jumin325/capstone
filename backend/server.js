@@ -373,12 +373,18 @@ app.get('/api/search', async (req, res) => {
   const searchQuery = req.query.query || '';
   const productType = req.query.product_type || '책';
   const category = req.query.category_id || '';
+  const isAdmin = String(req.query.admin).toLowerCase() === 'true'; // ✅ 안전하게 비교
 
   try {
     const db = await initDB();
 
     let whereClause = `p.product_name LIKE ? AND p.product_type = ?`;
     const params = [`%${searchQuery}%`, productType];
+
+    // ✅ 관리자만 모든 상품을 보도록 예외처리
+    if (!isAdmin) {
+      whereClause += ` AND p.is_active = 'true'`;
+    }
 
     if (category && category !== '전체' && category !== 'all') {
       whereClause += ` AND b.category = ?`;
@@ -387,7 +393,7 @@ app.get('/api/search', async (req, res) => {
 
     const query = `
       SELECT 
-        p.product_id, p.product_name, p.price, p.image_url, p.product_type, p.stock_quantity,
+        p.product_id, p.product_name, p.price, p.image_url, p.product_type, p.stock_quantity, p.is_active,
         b.author, b.publisher, b.category
       FROM product p
       LEFT JOIN book b ON p.product_id = b.product_id
@@ -403,8 +409,6 @@ app.get('/api/search', async (req, res) => {
     res.status(500).json({ error: '검색 실패', message: err.message });
   }
 });
-
-
 
 // 주문 상세 조회
 app.get('/api/order-details/:orderId', async (req, res) => {
@@ -503,24 +507,61 @@ app.get('/api/reservation', async (req, res) => {
   try {
     const connection = await initDB();
 
-    // 1. 주문 목록 조회 (완료 상태만) - total_amount 포함
+    // ✅ 관리자일 경우 전체 조회
+    if (phoneTail === 'admin') {
+      const [adminOrders] = await connection.query(
+        `SELECT o.order_id, o.order_date, o.total_amount, r.receipt_status, o.phone
+         FROM orders o
+         LEFT JOIN receipts r ON o.order_id = r.order_id
+         WHERE o.status = '완료'
+         ORDER BY o.order_date DESC`
+      );
+
+      const enrichedAdminOrders = await Promise.all(
+        adminOrders.map(async (order) => {
+          const [items] = await connection.query(
+            `SELECT p.product_name
+             FROM order_items oi
+             JOIN product p ON oi.product_id = p.product_id
+             WHERE oi.order_id = ?
+             LIMIT 1`,
+            [order.order_id]
+          );
+
+          const [summary] = await connection.query(
+            `SELECT SUM(oi.quantity) as total_quantity
+             FROM order_items oi
+             WHERE oi.order_id = ?`,
+            [order.order_id]
+          );
+
+          return {
+            ...order,
+            representative_product: items[0]?.product_name || '상품 없음',
+            total_quantity: summary[0]?.total_quantity || 0
+          };
+        })
+      );
+
+      return res.json({ success: true, orders: enrichedAdminOrders });
+    }
+
+    // ✅ 일반 사용자 (전화번호 뒷자리로 조회)
     const [orders] = await connection.query(
-      `SELECT o.order_id, o.order_date, o.total_amount, r.receipt_status
+      `SELECT o.order_id, o.order_date, o.total_amount, r.receipt_status, o.phone
        FROM orders o
        LEFT JOIN receipts r ON o.order_id = r.order_id
-       WHERE o.phone = ? AND o.status = '완료'
+       WHERE o.phone LIKE ? AND o.status = '완료'
        ORDER BY o.order_date DESC`,
-      [phoneTail]
+      [`%${phoneTail}`]
     );
 
     if (orders.length === 0) {
       return res.json({ success: false, message: '조회된 주문이 없습니다.' });
     }
 
-    // 2. 각 주문에 대한 대표 상품, 총 수량 정보 추가
     const enrichedOrders = await Promise.all(
       orders.map(async (order) => {
-        // 대표 상품
         const [items] = await connection.query(
           `SELECT p.product_name
            FROM order_items oi
@@ -530,7 +571,6 @@ app.get('/api/reservation', async (req, res) => {
           [order.order_id]
         );
 
-        // 총 수량만 계산
         const [summary] = await connection.query(
           `SELECT SUM(oi.quantity) as total_quantity
            FROM order_items oi
@@ -546,7 +586,6 @@ app.get('/api/reservation', async (req, res) => {
       })
     );
 
-    // 3. 응답 전송
     res.json({ success: true, orders: enrichedOrders });
   } catch (err) {
     console.error('예약 내역 조회 실패:', err);
@@ -604,49 +643,39 @@ app.get('/api/data', async (req, res) => {
   const offset = (page - 1) * limit;
   const category = req.query.category;
   const sort = req.query.sort || '최신순';
-  const productType = req.query.product_type || '책'; // ✅ 추가
+  const productType = req.query.product_type || '책';
+  const isAdmin = String(req.query.admin).toLowerCase() === 'true';
 
-  let whereClause = 'p.is_active = TRUE';
-  let orderClause = 'p.price ASC';
-  const params = [];
+  let whereClause = `p.product_type = ?`;
+  const params = [productType];
 
-  // ✅ product_type 필터 추가
-  if (productType && productType !== 'all') {
-    whereClause += ` AND p.product_type = ?`;
-    params.push(productType);
+  // 🔒 일반 사용자만 is_active 제한
+  if (!isAdmin) {
+    whereClause += ` AND p.is_active = 'true'`;
   }
 
-  if (category && category !== 'all') {
+  // 🧠 책일 때만 b.category 조건 걸기 (문구류일 땐 book 테이블 없음)
+  if (productType === '책' && category && category !== 'all') {
     whereClause += ` AND b.category = ?`;
     params.push(category);
   }
 
-  switch (sort) {
-    case '낮은가격순':
-      orderClause = 'p.price ASC';
-      break;
-    case '높은가격순':
-      orderClause = 'p.price DESC';
-      break;
-    default:
-      orderClause = 'p.created_at DESC';
-  }
+  let orderClause = 'p.created_at DESC';
+  if (sort === '낮은가격순') orderClause = 'p.price ASC';
+  else if (sort === '높은가격순') orderClause = 'p.price DESC';
 
   try {
     const db = await initDB();
 
     const query = `
-      SELECT p.*, b.author, b.publisher, b.isbn, b.category, b.published_year
+      SELECT p.*, b.author, b.publisher, b.category
       FROM product p
       LEFT JOIN book b ON p.product_id = b.product_id
       WHERE ${whereClause}
       ORDER BY ${orderClause}
       LIMIT ? OFFSET ?
     `;
-
-    const queryParams = [...params, limit, offset];
-
-    const [results] = await db.query(query, queryParams);
+    const [results] = await db.query(query, [...params, limit, offset]);
 
     const countQuery = `
       SELECT COUNT(*) as total
@@ -665,14 +694,14 @@ app.get('/api/data', async (req, res) => {
         total: totalItems,
         per_page: limit,
         current_page: page,
-        last_page: totalPages
-      }
+        last_page: totalPages,
+      },
     });
 
     await db.end();
   } catch (error) {
     console.error('데이터 조회 오류:', error);
-    res.status(500).json({ error: '데이터베이스 오류', details: error.message });
+    res.status(500).json({ error: '서버 오류' });
   }
 });
 
@@ -904,6 +933,74 @@ schedule.scheduleJob('*/10 * * * * *', async () => {
     console.error('⛔ 대기 주문 자동 삭제 실패:', err);
   }
 });
+
+// 매 1초마다 수령 후 1분 지난 건 자동 취소
+schedule.scheduleJob('*/10 * * * * *', async () => {
+  try {
+    const db = await initDB();
+
+    // receipt_status가 완료이고 1분 이상 지난 건 취소 처리
+    const [result] = await db.query(`
+      UPDATE receipts
+      SET receipt_status = '취소'
+      WHERE receipt_status = '대기'
+        AND receipt_date < (NOW() - INTERVAL 1 MINUTE)
+    `);
+
+    if (result.affectedRows > 0) {
+      console.log(`:arrows_counterclockwise: 자동 취소된 수령 데이터: ${result.affectedRows}건`);
+    }
+
+    await db.end();
+  } catch (err) {
+    console.error(':no_entry: 자동 수령 취소 실패:', err);
+  }
+});
+
+app.get('/api/inquiries', async (req, res) => {
+  const phoneTail = req.query.phoneTail;
+
+  try {
+    const db = await initDB(); // ✅ 이 줄이 빠져 있었음!!
+
+    let results;
+    if (phoneTail === 'admin') {
+      [results] = await db.query('SELECT * FROM questions ORDER BY question_id DESC');
+    } else {
+      [results] = await db.query(
+        'SELECT * FROM questions WHERE RIGHT(passwd, 4) = ? ORDER BY question_id DESC',
+        [phoneTail]
+      );
+    }
+
+    res.json(results);
+    await db.end(); // ✅ 연결 종료도 잊지 마세요
+  } catch (err) {
+    console.error('DB 조회 오류:', err);
+    res.status(500).json({ message: '서버 오류' });
+  }
+});
+
+app.put('/api/questions/:id/answer', async (req, res) => {
+  const { id } = req.params;
+  const { answer } = req.body;
+
+  try {
+    const db = await initDB(); // ✅ 이걸 반드시 호출해야 db가 존재함
+
+    await db.query(
+      'UPDATE questions SET answer = ? WHERE question_id = ?',
+      [answer, id]
+    );
+
+    res.json({ success: true });
+    await db.end();
+  } catch (err) {
+    console.error('답변 저장 오류:', err);
+    res.status(500).json({ message: '답변 저장 실패' });
+  }
+});
+
 
 // 서버 실행
 const PORT = process.env.PORT || 5000;

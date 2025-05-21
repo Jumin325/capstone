@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './InquiryPage.css';
 import axios from 'axios';
-import Header from '../components/Header'; // ✅ 헤더 컴포넌트 추가
+import Header from '../components/Header';
 
 const InquiryPage = () => {
   const [showForm, setShowForm] = useState(false);
@@ -10,7 +10,28 @@ const InquiryPage = () => {
   const [answers, setAnswers] = useState({});
   const [myQuestions, setMyQuestions] = useState([]);
   const [myQuestionsVisible, setMyQuestionsVisible] = useState(false);
-  const [keyword, setKeyword] = useState(''); // ✅ 검색 입력 상태
+  const [keyword, setKeyword] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [inquiries, setInquiries] = useState([]);
+  const [answerInputs, setAnswerInputs] = useState({});
+
+  useEffect(() => {
+    const adminStatus = sessionStorage.getItem('admin') === 'true';
+    if (adminStatus) {
+      setIsAdmin(true);
+      fetchInquiries('admin');
+    }
+  }, []);
+
+  const fetchInquiries = async (phoneTail) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/inquiries?phoneTail=${phoneTail}`);
+      const data = await response.json();
+      setInquiries(data);
+    } catch (error) {
+      console.error('문의 불러오기 실패:', error);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,22 +81,37 @@ const InquiryPage = () => {
     }
   };
 
+  const handleAnswerSubmit = async (questionId) => {
+    const content = answerInputs[questionId];
+    try {
+      await axios.put(`http://localhost:5000/api/questions/${questionId}/answer`, {
+        answer: content,
+      });
+
+      setInquiries((prev) =>
+        prev.map((q) =>
+          q.question_id === questionId ? { ...q, answer: content } : q
+        )
+      );
+
+      setAnswerInputs((prev) => {
+        const copy = { ...prev };
+        delete copy[questionId];
+        return copy;
+      });
+    } catch (err) {
+      alert('답변 저장 실패');
+    }
+  };
+
   const faqList = [
-    {
-      question: '배송은 얼마나 걸리나요?',
-      answer: '일반적으로 배송은 2~3일 소요됩니다.',
-    },
-    {
-      question: '주문 취소는 어떻게 하나요?',
-      answer: '장바구니 상태에서는 주문을 취소할 수 있습니다.',
-    },
+    { question: '배송은 얼마나 걸리나요?', answer: '일반적으로 배송은 2~3일 소요됩니다.' },
+    { question: '주문 취소는 어떻게 하나요?', answer: '장바구니 상태에서는 주문을 취소할 수 있습니다.' },
   ];
 
   return (
     <div className="bookstore-container">
-      {/* ✅ 공통 헤더 적용 */}
       <Header keyword={keyword} setKeyword={setKeyword} />
-
       <main className="main-content">
         <div className="inquiry-wrapper">
           <h2 className="inquiry-title">자주 묻는 질문</h2>
@@ -110,10 +146,66 @@ const InquiryPage = () => {
                 <button type="submit">제출</button>
               </form>
             )}
-            <button className="check-my-questions-button" onClick={handleCheckMyQuestions}>내 문의 확인하기</button>
+
+            {!isAdmin && (
+              <button className="check-my-questions-button" onClick={handleCheckMyQuestions}>
+                내 문의 확인하기
+              </button>
+            )}
           </div>
 
-          {myQuestionsVisible && (
+          {isAdmin && (
+            <div className="question-list">
+              <h3>전체 문의 내역 (관리자)</h3>
+              {inquiries.length > 0 ? (
+                inquiries.map((item) => (
+                  <div key={item.question_id} className="faq-item">
+                    <div
+                      className="faq-question"
+                      onClick={() =>
+                        setAnswerInputs((prev) => ({
+                          ...prev,
+                          [item.question_id]: prev[item.question_id] !== undefined
+                            ? undefined
+                            : item.answer || '',
+                        }))
+                      }
+                    >
+                      {item.question}
+                    </div>
+                    <div className="faq-answer">{item.answer || '답변 준비 중입니다.'}</div>
+
+                    {answerInputs[item.question_id] !== undefined && (
+                      <div className="answer-form">
+                        <textarea
+                          value={answerInputs[item.question_id]}
+                          onChange={(e) =>
+                            setAnswerInputs((prev) => ({
+                              ...prev,
+                              [item.question_id]: e.target.value,
+                            }))
+                          }
+                          placeholder="답변을 입력하세요"
+                        />
+                        <button
+                          onClick={() => handleAnswerSubmit(item.question_id)}
+                          className="submit-btn"
+                        >
+                          저장
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="empty-question-box">
+                  <div className="no-questions">등록된 문의가 없습니다.</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {myQuestionsVisible && !isAdmin && (
             <div className="question-list">
               <h3>내 문의 내역</h3>
               {myQuestions.length > 0 ? (

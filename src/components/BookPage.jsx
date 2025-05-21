@@ -41,7 +41,7 @@ const BookPage = () => {
     try {
       setLoading(true);
       const response = await fetch(
-        `http://localhost:5000/api/data?page=${currentPage}&sort=${sortOrder}&category=${activeCategory}&product_type=${activeProductType}`
+        `http://localhost:5000/api/data?page=${currentPage}&sort=${sortOrder}&category=${activeCategory}&product_type=${activeProductType}&admin=${isAdmin.toString()}`
       );
       const result = await response.json();
       setBooks(result.data);
@@ -81,6 +81,7 @@ const handleSearch = async () => {
           query: trimmedKeyword,
           product_type: activeProductType,
           category_id: activeCategory,
+          admin: isAdmin,
         },
       });
       setSearchResults(response.data.data);
