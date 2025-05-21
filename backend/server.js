@@ -5,6 +5,7 @@ const cors = require('cors');
 const session = require('express-session');
 const initDB = require('./db');  // mysql2/promise 연결
 const bcrypt = require('bcrypt');
+const schedule = require('node-schedule');
 
 const app = express();
 
@@ -826,12 +827,26 @@ app.post('/api/admin-session', (req, res) => {
   const { action } = req.body;
 
   if (action === 'login') {
-    console.log('🔐 관리자 모드 활성화됨');
-  } else if (action === 'logout') {
-    console.log('🔓 관리자 모드 종료됨');
-  }
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error('세션 재생성 실패:', err);
+        return res.status(500).json({ success: false });
+      }
 
-  res.sendStatus(200);
+      req.session.admin = true;
+      console.log('🔐 새 관리자 세션 생성됨');
+      res.json({ success: true });
+    });
+  } else if (action === 'logout') {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('세션 삭제 실패:', err);
+        return res.status(500).json({ success: false });
+      }
+      console.log('🔓 관리자 세션 종료됨');
+      res.json({ success: true });
+    });
+  }
 });
 
 //관리자 BookPage 재고 수정
@@ -850,6 +865,43 @@ app.put('/api/products/:productId', async (req, res) => {
   } catch (err) {
     console.error('재고 수정 실패:', err);
     res.status(500).send({ success: false });
+  }
+});
+
+// 매 분마다 오래된 '대기' 주문 삭제 (order_date 기준 1분 초과)
+schedule.scheduleJob('*/10 * * * * *', async () => {
+  try {
+    const db = await initDB();
+
+    // 1. 삭제 대상 order_id 조회
+    const [rows] = await db.query(`
+      SELECT order_id FROM orders
+      WHERE status = '준비'
+        AND order_date < (NOW() - INTERVAL 1 MINUTE)
+    `);
+
+    if (rows.length > 0) {
+      const orderIds = rows.map(row => row.order_id);
+
+      // 2. order_items 먼저 삭제
+      const [deletedItems] = await db.query(
+        `DELETE FROM order_items WHERE order_id IN (?)`,
+        [orderIds]
+      );
+
+      // 3. orders 삭제
+      const [deletedOrders] = await db.query(
+        `DELETE FROM orders WHERE order_id IN (?)`,
+        [orderIds]
+      );
+
+      console.log(`🗑️ order_items ${deletedItems.affectedRows}건 삭제됨`);
+      console.log(`🗑️ orders ${deletedOrders.affectedRows}건 삭제됨`);
+    }
+
+    await db.end();
+  } catch (err) {
+    console.error('⛔ 대기 주문 자동 삭제 실패:', err);
   }
 });
 

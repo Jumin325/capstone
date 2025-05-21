@@ -14,19 +14,30 @@ const Header = ({ keyword, setKeyword, onSearch }) => {
     setIsAdmin(adminStatus);
   }, []);
 
-  const handleAdminLogin = async () => {
-  sessionStorage.setItem('admin', 'true');
-  setIsAdmin(true);
+const handleAdminLogin = async () => {
+  try {
+    const response = await fetch('http://localhost:5000/api/admin-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'login' }),
+      credentials: 'include', // 꼭 필요함: 쿠키 기반 세션을 유지
+    });
 
-  // 백엔드에 알림 전송
-  await fetch('http://localhost:5000/api/admin-session', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'login' })
-  });
+    const result = await response.json();
 
-  alert('관리자 모드로 전환되었습니다.');
-  navigate('/');
+    if (result.success) {
+      sessionStorage.clear(); // ⚠️ 서버 세션 재생성 이후에 클라이언트 세션 초기화
+      sessionStorage.setItem('admin', 'true');
+      setIsAdmin(true);
+      alert('관리자 모드로 로그인되었습니다.');
+      navigate('/'); // ✅ 메인 페이지로 이동
+    } else {
+      alert('로그인 실패');
+    }
+  } catch (err) {
+    console.error('관리자 로그인 오류:', err);
+    alert('서버 오류');
+  }
 };
 
 const handleAdminLogout = async () => {
@@ -48,6 +59,7 @@ const handleAdminLogout = async () => {
       <header className="header">
         <div className="header-title" onClick={() => navigate('/')}>EasyFind</div>
 
+        <div className="header-right">
         {isBookPage && (
           <div className="search-box">
             <input
@@ -68,6 +80,7 @@ const handleAdminLogout = async () => {
           ) : (
             <button onClick={handleAdminLogin} className="admin-login-btn">관리자 로그인</button>
           )}
+          </div>
         </div>
       </header>
 
