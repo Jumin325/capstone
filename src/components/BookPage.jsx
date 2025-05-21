@@ -184,6 +184,45 @@ const handleSearch = async () => {
               </li>
             </ul>
           </div>
+          
+          {isAdmin && (
+            <div className="category-section" style={{ marginTop: '30px' }}>
+              <h3>📉 재고 주의 상품</h3>
+              <ul className="category-list">
+                <li
+                  className={`category-item ${activeCategory === 'lowstock' ? 'active' : ''}`}
+                  onClick={() => {
+                    setActiveProductType('all');
+                    setActiveCategory('lowstock');
+                    setCurrentPage(1);
+                    setIsSearching(false);
+                  }}
+                >
+                  재고 5개 이하
+                </li>
+              </ul>
+            </div>
+          )}
+
+          {isAdmin && (
+            <div className="category-section" style={{ marginTop: '30px' }}>
+              <h3>❌ 재고 소진</h3>
+              <ul className="category-list">
+                <li
+                  className={`category-item ${activeCategory === 'outofstock' ? 'active' : ''}`}
+                  onClick={() => {
+                    setActiveProductType('all');
+                    setActiveCategory('outofstock');
+                    setCurrentPage(1);
+                    setIsSearching(false);
+                  }}
+                >
+                  재고 소진 상품
+                </li>
+              </ul>
+            </div>
+          )}
+
         </div>
 
         {/* 메인 콘텐츠 */}
@@ -228,13 +267,14 @@ const handleSearch = async () => {
                 <>
                   <p className="book-author">저자: {book.author}</p>
                   <p className="book-publisher">출판사: {book.publisher}</p>
-                  {isAdmin && (
-                    <p className="book-stock">
-                      재고 수량: <span className="stock-number">{book.stock_quantity}개</span>
-                    </p>
-                  )}
                 </>
               )}
+
+              {isAdmin && (
+                  <p className="book-stock">
+                    재고 수량: <span className="stock-number">{book.stock_quantity}개</span>
+                   </p>
+                )}
               <div className="book-price">
                 <span className="sale-price">{Number(book.price).toLocaleString()}원</span>
                 <div className="book-button-container">

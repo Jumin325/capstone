@@ -58,24 +58,36 @@ app.get('/api/data', async (req, res) => {
 
   const category = req.query.category || 'all';
   const sort = req.query.sort || '최신순';
-  const productType = req.query.product_type || '책'; // ✅ 핵심 필드
+  const productType = req.query.product_type || '책';
+  const isAdmin = String(req.query.admin).toLowerCase() === 'true';
 
-  let whereClause = 'p.is_active = TRUE';
+  let whereClause = '1=1';
   const params = [];
 
-  // ✅ product_type 필터
-  if (productType !== 'all') {
-    whereClause += ` AND p.product_type = ?`;
-    params.push(productType);
+  // ✅ 비관리자라면 활성 상품만
+  if (!isAdmin) {
+    whereClause += ` AND p.is_active = 'true'`;
   }
 
-  // ✅ category는 책일 때만 적용 (문구류에는 category 없음)
-  if (productType === '책' && category !== 'all') {
-    whereClause += ` AND b.category = ?`;
-    params.push(category);
+  // ✅ 'lowstock'일 경우 - 재고만 필터하고 product_type/category 제한 없음
+  if (category === 'lowstock') {
+    whereClause += ` AND p.stock_quantity <= 5`;
+  } else if (category === 'outofstock') {
+    whereClause += ` AND p.stock_quantity = 0 AND p.is_active = 'false'`;
+  } else {
+    if (productType !== 'all') {
+      whereClause += ` AND p.product_type = ?`;
+      params.push(productType);
+    }
+
+    // ✅ 책일 때만 category 필터 적용
+    if (productType === '책' && category && category !== 'all') {
+      whereClause += ` AND b.category = ?`;
+      params.push(category);
+    }
   }
 
-  // ✅ 정렬 기준
+  // ✅ 정렬
   let orderClause = 'p.created_at DESC';
   if (sort === '낮은가격순') orderClause = 'p.price ASC';
   else if (sort === '높은가격순') orderClause = 'p.price DESC';
@@ -100,8 +112,8 @@ app.get('/api/data', async (req, res) => {
       LEFT JOIN book b ON p.product_id = b.product_id
       WHERE ${whereClause}
     `;
-
     const [countResults] = await db.query(countQuery, params);
+
     const totalItems = countResults[0].total;
     const totalPages = Math.ceil(totalItems / limit);
 
@@ -117,9 +129,9 @@ app.get('/api/data', async (req, res) => {
     });
 
     await db.end();
-  } catch (err) {
-    console.error('데이터 조회 오류:', err);
-    res.status(500).json({ error: '서버 오류 발생' });
+  } catch (error) {
+    console.error('데이터 조회 오류:', error);
+    res.status(500).json({ error: '서버 오류' });
   }
 });
 
@@ -231,62 +243,85 @@ app.get('/api/cart', async (req, res) => {
     res.status(500).json({ error: '장바구니 정보를 불러오는 데 실패했습니다.' });
   }
 });
-// 주문 상태 완료 처리
+
+// 결제 완료
 app.post('/api/complete-order', async (req, res) => {
   const { sessionId } = req.body;
 
   try {
     const db = await initDB();
 
-    // 준비 상태 주문을 완료로 변경
-    await db.query(
-      `UPDATE orders
-       SET status = '완료',
-           order_date = CURRENT_TIMESTAMP
-       WHERE session_id = ? AND status = '준비'`,
-      [sessionId]
-    );
+    const [orderRow] = await db.query(`
+      SELECT order_id FROM orders
+      WHERE session_id = ? AND status = '준비'
+      LIMIT 1
+    `, [sessionId]);
 
-    const [rows] = await db.query(
-      `SELECT order_id FROM orders
-       WHERE session_id = ? AND status = '완료'
-       ORDER BY order_date DESC
-       LIMIT 1`,
-      [sessionId]
-    );
-
-    if (!rows || rows.length === 0) {
+    if (!orderRow || orderRow.length === 0) {
       await db.end();
-      return res.status(500).json({ success: false, error: '주문 ID 조회 실패' });
+      return res.status(400).json({ success: false, error: '주문이 없습니다.' });
     }
 
-    const orderId = rows[0].order_id;
+    const orderId = orderRow[0].order_id;
 
-    // ✅ 총 금액 계산
-    const [sumResult] = await db.query(
-      `SELECT SUM(quantity * price_per_item) AS total FROM order_items WHERE order_id = ?`,
+    // ✅ 재고 확인 먼저
+    const [items] = await db.query(`
+      SELECT oi.product_id, oi.quantity, p.stock_quantity, p.product_name
+      FROM order_items oi
+      JOIN product p ON oi.product_id = p.product_id
+      WHERE oi.order_id = ?
+    `, [orderId]);
+
+    for (const item of items) {
+      if (item.quantity > item.stock_quantity) {
+        await db.end();
+        return res.status(400).json({
+          success: false,
+          error: `${item.product_name}의 재고가 부족합니다. 현재 재고: ${item.stock_quantity}개`
+        });
+      }
+    }
+
+    // ✅ 이 시점에만 주문 상태를 '완료'로 변경
+    await db.query(`
+      UPDATE orders
+      SET status = '완료',
+          order_date = CURRENT_TIMESTAMP
+      WHERE order_id = ?`, [orderId]);
+
+    // ✅ 재고 차감
+    for (const item of items) {
+      await db.query(`
+        UPDATE product
+        SET stock_quantity = stock_quantity - ?
+        WHERE product_id = ?`,
+        [item.quantity, item.product_id]
+      );
+    }
+
+    const [sumResult] = await db.query(`
+      SELECT SUM(quantity * price_per_item) AS total FROM order_items WHERE order_id = ?`,
       [orderId]
     );
     const totalAmount = sumResult[0].total || 0;
 
-    // ✅ orders 테이블에 total_amount 저장
     await db.query(
       `UPDATE orders SET total_amount = ? WHERE order_id = ?`,
       [totalAmount, orderId]
     );
 
-    // ✅ receipts 테이블 초기화
     await db.query(`
-      INSERT INTO receipts (order_id, receipt_status)
-      VALUES (?, '대기')
-      ON DUPLICATE KEY UPDATE receipt_status = '대기'
+      INSERT INTO receipts (order_id, receipt_status, payment_date)
+      VALUES (?, '대기', CURRENT_TIMESTAMP)
+      ON DUPLICATE KEY UPDATE receipt_status = '대기',
+      payment_date = CURRENT_TIMESTAMP
     `, [orderId]);
 
     res.json({ success: true, orderId });
     await db.end();
   } catch (err) {
     console.error('주문 상태 업데이트 오류:', err);
-    res.status(500).json({ success: false, error: 'DB update 실패' });
+    res.status(500).json({ success: false, error: '서버 오류' });
   }
 });
 
@@ -638,74 +673,6 @@ app.get('/api/order-details/:orderId', async (req, res) => {
   }
 });
 
-app.get('/api/data', async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = 9;
-  const offset = (page - 1) * limit;
-  const category = req.query.category;
-  const sort = req.query.sort || '최신순';
-  const productType = req.query.product_type || '책';
-  const isAdmin = String(req.query.admin).toLowerCase() === 'true';
-
-  let whereClause = `p.product_type = ?`;
-  const params = [productType];
-
-  // 🔒 일반 사용자만 is_active 제한
-  if (!isAdmin) {
-    whereClause += ` AND p.is_active = 'true'`;
-  }
-
-  // 🧠 책일 때만 b.category 조건 걸기 (문구류일 땐 book 테이블 없음)
-  if (productType === '책' && category && category !== 'all') {
-    whereClause += ` AND b.category = ?`;
-    params.push(category);
-  }
-
-  let orderClause = 'p.created_at DESC';
-  if (sort === '낮은가격순') orderClause = 'p.price ASC';
-  else if (sort === '높은가격순') orderClause = 'p.price DESC';
-
-  try {
-    const db = await initDB();
-
-    const query = `
-      SELECT p.*, b.author, b.publisher, b.category
-      FROM product p
-      LEFT JOIN book b ON p.product_id = b.product_id
-      WHERE ${whereClause}
-      ORDER BY ${orderClause}
-      LIMIT ? OFFSET ?
-    `;
-    const [results] = await db.query(query, [...params, limit, offset]);
-
-    const countQuery = `
-      SELECT COUNT(*) as total
-      FROM product p
-      LEFT JOIN book b ON p.product_id = b.product_id
-      WHERE ${whereClause}
-    `;
-    const [countResults] = await db.query(countQuery, params);
-    const totalItems = countResults[0].total;
-    const totalPages = Math.ceil(totalItems / limit);
-
-    res.json({
-      success: true,
-      data: results,
-      pagination: {
-        total: totalItems,
-        per_page: limit,
-        current_page: page,
-        last_page: totalPages,
-      },
-    });
-
-    await db.end();
-  } catch (error) {
-    console.error('데이터 조회 오류:', error);
-    res.status(500).json({ error: '서버 오류' });
-  }
-});
-
 // ✅ [유지] 주문 수령 상태 처리 (있으면 UPDATE, 없으면 INSERT)
 app.post('/api/receipt/complete', async (req, res) => {
   const { orderId } = req.body;
@@ -898,7 +865,7 @@ app.put('/api/products/:productId', async (req, res) => {
   }
 });
 
-// 매 분마다 오래된 '대기' 주문 삭제 (order_date 기준 1분 초과)
+// 장바구니 자동 삭제 10초마다 검색 1분 동안 status = '완료'로 바뀌지 않을 시 삭제
 schedule.scheduleJob('*/10 * * * * *', async () => {
   try {
     const db = await initDB();
@@ -935,22 +902,21 @@ schedule.scheduleJob('*/10 * * * * *', async () => {
   }
 });
 
-<<<<<<< HEAD
-// 매 1초마다 수령 후 1분 지난 건 자동 취소
+// 미수령으로 인한 주문 취소
 schedule.scheduleJob('*/10 * * * * *', async () => {
   try {
     const db = await initDB();
 
-    // receipt_status가 완료이고 1분 이상 지난 건 취소 처리
+    // receipt_status가 대기 상태에서 1분 이상 지난 건 취소 처리
     const [result] = await db.query(`
       UPDATE receipts
       SET receipt_status = '취소'
       WHERE receipt_status = '대기'
-        AND receipt_date < (NOW() - INTERVAL 1 MINUTE)
+        AND payment_date < (NOW() - INTERVAL 1 MINUTE)
     `);
 
     if (result.affectedRows > 0) {
-      console.log(`:arrows_counterclockwise: 자동 취소된 수령 데이터: ${result.affectedRows}건`);
+      console.log(`:arrows_counterclockwise: 장기간 미수령으로 취소된 데이터: ${result.affectedRows}건`);
     }
 
     await db.end();
@@ -959,8 +925,6 @@ schedule.scheduleJob('*/10 * * * * *', async () => {
   }
 });
 
-=======
->>>>>>> 979960f5ce259b8d623a07b1def3d3ab3d0b47f0
 app.get('/api/inquiries', async (req, res) => {
   const phoneTail = req.query.phoneTail;
 
@@ -978,7 +942,7 @@ app.get('/api/inquiries', async (req, res) => {
     }
 
     res.json(results);
-    await db.end(); // ✅ 연결 종료도 잊지 마세요
+    await db.end();
   } catch (err) {
     console.error('DB 조회 오류:', err);
     res.status(500).json({ message: '서버 오류' });
@@ -990,7 +954,7 @@ app.put('/api/questions/:id/answer', async (req, res) => {
   const { answer } = req.body;
 
   try {
-    const db = await initDB(); // ✅ 이걸 반드시 호출해야 db가 존재함
+    const db = await initDB();
 
     await db.query(
       'UPDATE questions SET answer = ? WHERE question_id = ?',

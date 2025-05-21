@@ -104,12 +104,12 @@ const CartPage = () => {
       });
       const result = await response.json();
 
-      if (result.success && result.orderId) {
-        setIsModalOpen(false);
-        openPhoneModal(); // 전화번호 입력 모달로 이동
-      } else {
-        alert('결제는 되었지만 주문번호를 가져오는 데 실패했습니다.');
-      }
+        if (result.success && result.orderId) {
+          setIsModalOpen(false);
+          openPhoneModal(); // 전화번호 입력 모달로 이동
+        } else {
+          alert(result.error || '결제 중 문제가 발생했습니다.');
+        }
     } catch (error) {
       alert('결제 처리 중 오류가 발생했습니다: ' + error.message);
     }
