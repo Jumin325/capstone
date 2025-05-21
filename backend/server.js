@@ -593,6 +593,7 @@ app.get('/api/reservation', async (req, res) => {
   }
 });
 
+
 // ✅ 주문 상세 조회 API (server.js)
 app.get('/api/order-details/:orderId', async (req, res) => {
   const orderId = req.params.orderId;
@@ -934,6 +935,7 @@ schedule.scheduleJob('*/10 * * * * *', async () => {
   }
 });
 
+<<<<<<< HEAD
 // 매 1초마다 수령 후 1분 지난 건 자동 취소
 schedule.scheduleJob('*/10 * * * * *', async () => {
   try {
@@ -957,6 +959,8 @@ schedule.scheduleJob('*/10 * * * * *', async () => {
   }
 });
 
+=======
+>>>>>>> 979960f5ce259b8d623a07b1def3d3ab3d0b47f0
 app.get('/api/inquiries', async (req, res) => {
   const phoneTail = req.query.phoneTail;
 
