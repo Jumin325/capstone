@@ -203,50 +203,64 @@ const handleSearch = async () => {
           ) : (isSearching ? searchResults : books).length === 0 ? (
             <div className="no-results">상품이 없습니다.</div>
           ) : (
-            <div className="sub-book-grid">
-              {(isSearching ? searchResults : books).map((book) => (
-                <div key={book.product_id} className="sub-book-item">
-                  <div className="book-image">
-                    {book.image_url ? (
-                      <img src={book.image_url} alt={book.product_name} />
-                    ) : (
-                      <div className="placeholder">이미지 없음</div>
-                    )}
-                  </div>
-                  <div className="book-info">
-                    <h3 className="book-title">{book.product_name}</h3>
-                    {book.product_type === '책' && (
-                      <>
-                        <p className="book-author">저자: {book.author}</p>
-                        <p className="book-publisher">출판사: {book.publisher}</p>
-                        {isAdmin && (
-                          <p className="book-stock">
-                            재고 수량: <span className="stock-number">{book.stock_quantity}개</span>
-                          </p>
-                        )}
-                      </>
-                    )}
-                    <div className="book-price">
-                      <span className="sale-price">{Number(book.price).toLocaleString()}원</span>
-                      <div className="book-button-container">
-                        {isAdmin ? (
-                          <button className="edit-button" onClick={() => {
-                                setEditTarget(book);
-                                setNewStock(book.stock_quantity.toString());
-                          }}>
-                            수정
-                          </button>
-                        ) : (
-                          <button className="add-to-cart-button" onClick={() => handleAddToCart(book.product_id)}>
-                            장바구니
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+<div className="sub-book-grid">
+  {(() => {
+    const data = isSearching ? searchResults : books;
+    const visibleItems = data; // 이미 필터된 결과라고 가정
+    const remainder = visibleItems.length % 3;
+    const placeholders = remainder === 0 ? [] : Array(3 - remainder).fill(null);
+
+    return (
+      <>
+        {visibleItems.map(book => (
+          <div key={book.product_id} className="sub-book-item">
+            <div className="book-image">
+              {book.image_url ? (
+                <img src={book.image_url} alt={book.product_name} />
+              ) : (
+                <div className="placeholder">이미지 없음</div>
+              )}
             </div>
+            <div className="book-info">
+              <h3 className="book-title">{book.product_name}</h3>
+              {book.product_type === '책' && (
+                <>
+                  <p className="book-author">저자: {book.author}</p>
+                  <p className="book-publisher">출판사: {book.publisher}</p>
+                  {isAdmin && (
+                    <p className="book-stock">
+                      재고 수량: <span className="stock-number">{book.stock_quantity}개</span>
+                    </p>
+                  )}
+                </>
+              )}
+              <div className="book-price">
+                <span className="sale-price">{Number(book.price).toLocaleString()}원</span>
+                <div className="book-button-container">
+                  {isAdmin ? (
+                    <button className="edit-button" onClick={() => {
+                      setEditTarget(book);
+                      setNewStock(book.stock_quantity.toString());
+                    }}>
+                      수정
+                    </button>
+                  ) : (
+                    <button className="add-to-cart-button" onClick={() => handleAddToCart(book.product_id)}>
+                      장바구니
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+        {placeholders.map((_, i) => (
+          <div key={`placeholder-${i}`} className="sub-book-item" style={{ visibility: 'hidden' }} />
+        ))}
+      </>
+    );
+  })()}
+</div>
           )}
 
 {/* 페이지네이션 */}
