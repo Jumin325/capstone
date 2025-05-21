@@ -503,24 +503,61 @@ app.get('/api/reservation', async (req, res) => {
   try {
     const connection = await initDB();
 
-    // 1. 주문 목록 조회 (완료 상태만) - total_amount 포함
+    // ✅ 관리자일 경우 전체 조회
+    if (phoneTail === 'admin') {
+      const [adminOrders] = await connection.query(
+        `SELECT o.order_id, o.order_date, o.total_amount, r.receipt_status, o.phone
+         FROM orders o
+         LEFT JOIN receipts r ON o.order_id = r.order_id
+         WHERE o.status = '완료'
+         ORDER BY o.order_date DESC`
+      );
+
+      const enrichedAdminOrders = await Promise.all(
+        adminOrders.map(async (order) => {
+          const [items] = await connection.query(
+            `SELECT p.product_name
+             FROM order_items oi
+             JOIN product p ON oi.product_id = p.product_id
+             WHERE oi.order_id = ?
+             LIMIT 1`,
+            [order.order_id]
+          );
+
+          const [summary] = await connection.query(
+            `SELECT SUM(oi.quantity) as total_quantity
+             FROM order_items oi
+             WHERE oi.order_id = ?`,
+            [order.order_id]
+          );
+
+          return {
+            ...order,
+            representative_product: items[0]?.product_name || '상품 없음',
+            total_quantity: summary[0]?.total_quantity || 0
+          };
+        })
+      );
+
+      return res.json({ success: true, orders: enrichedAdminOrders });
+    }
+
+    // ✅ 일반 사용자 (전화번호 뒷자리로 조회)
     const [orders] = await connection.query(
-      `SELECT o.order_id, o.order_date, o.total_amount, r.receipt_status
+      `SELECT o.order_id, o.order_date, o.total_amount, r.receipt_status, o.phone
        FROM orders o
        LEFT JOIN receipts r ON o.order_id = r.order_id
-       WHERE o.phone = ? AND o.status = '완료'
+       WHERE o.phone LIKE ? AND o.status = '완료'
        ORDER BY o.order_date DESC`,
-      [phoneTail]
+      [`%${phoneTail}`]
     );
 
     if (orders.length === 0) {
       return res.json({ success: false, message: '조회된 주문이 없습니다.' });
     }
 
-    // 2. 각 주문에 대한 대표 상품, 총 수량 정보 추가
     const enrichedOrders = await Promise.all(
       orders.map(async (order) => {
-        // 대표 상품
         const [items] = await connection.query(
           `SELECT p.product_name
            FROM order_items oi
@@ -530,7 +567,6 @@ app.get('/api/reservation', async (req, res) => {
           [order.order_id]
         );
 
-        // 총 수량만 계산
         const [summary] = await connection.query(
           `SELECT SUM(oi.quantity) as total_quantity
            FROM order_items oi
@@ -546,13 +582,13 @@ app.get('/api/reservation', async (req, res) => {
       })
     );
 
-    // 3. 응답 전송
     res.json({ success: true, orders: enrichedOrders });
   } catch (err) {
     console.error('예약 내역 조회 실패:', err);
     res.status(500).json({ success: false, message: '서버 오류' });
   }
 });
+
 
 // ✅ 주문 상세 조회 API (server.js)
 app.get('/api/order-details/:orderId', async (req, res) => {
@@ -904,6 +940,51 @@ schedule.scheduleJob('*/10 * * * * *', async () => {
     console.error('⛔ 대기 주문 자동 삭제 실패:', err);
   }
 });
+
+app.get('/api/inquiries', async (req, res) => {
+  const phoneTail = req.query.phoneTail;
+
+  try {
+    const db = await initDB(); // ✅ 이 줄이 빠져 있었음!!
+
+    let results;
+    if (phoneTail === 'admin') {
+      [results] = await db.query('SELECT * FROM questions ORDER BY question_id DESC');
+    } else {
+      [results] = await db.query(
+        'SELECT * FROM questions WHERE RIGHT(passwd, 4) = ? ORDER BY question_id DESC',
+        [phoneTail]
+      );
+    }
+
+    res.json(results);
+    await db.end(); // ✅ 연결 종료도 잊지 마세요
+  } catch (err) {
+    console.error('DB 조회 오류:', err);
+    res.status(500).json({ message: '서버 오류' });
+  }
+});
+
+app.put('/api/questions/:id/answer', async (req, res) => {
+  const { id } = req.params;
+  const { answer } = req.body;
+
+  try {
+    const db = await initDB(); // ✅ 이걸 반드시 호출해야 db가 존재함
+
+    await db.query(
+      'UPDATE questions SET answer = ? WHERE question_id = ?',
+      [answer, id]
+    );
+
+    res.json({ success: true });
+    await db.end();
+  } catch (err) {
+    console.error('답변 저장 오류:', err);
+    res.status(500).json({ message: '답변 저장 실패' });
+  }
+});
+
 
 // 서버 실행
 const PORT = process.env.PORT || 5000;

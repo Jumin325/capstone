@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './ReservationPage.css';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
-import Header from '../components/Header'; // ✅ 공통 헤더 임포트
+import Header from '../components/Header';
 
 const ReservationPage = () => {
   const [phoneTail, setPhoneTail] = useState('');
@@ -12,6 +12,24 @@ const ReservationPage = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [keyword, setKeyword] = useState('');
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+
+  // ✅ 관리자면 자동 조회
+  useEffect(() => {
+    const adminStatus = sessionStorage.getItem('admin') === 'true';
+    setIsAdmin(adminStatus);
+    if (adminStatus) {
+      setPhoneTail('admin');
+      setShowModal(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!showModal && phoneTail) {
+      fetchOrders();
+    }
+  }, [showModal, phoneTail]);
 
   const fetchOrders = async () => {
     try {
@@ -19,7 +37,6 @@ const ReservationPage = () => {
       const data = await response.json();
       if (data.success) {
         setOrders(data.orders);
-        setShowModal(false);
       } else {
         setError(data.message || '조회 실패');
       }
@@ -34,7 +51,7 @@ const ReservationPage = () => {
       setError('전화번호 뒷자리 4자리를 입력해주세요.');
       return;
     }
-    fetchOrders();
+    setShowModal(false);
   };
 
   const handleComplete = async (orderId) => {
@@ -69,13 +86,13 @@ const ReservationPage = () => {
 
   return (
     <div className="bookstore-container">
-      <Header keyword={keyword} setKeyword={setKeyword} /> {/* ✅ 공통 헤더 삽입 */}
+      <Header keyword={keyword} setKeyword={setKeyword} />
 
-      {/* 전화번호 입력 모달 */}
+      {/* 전화번호 모달: 관리자면 안 보임 */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ textAlign: 'center', padding: '20px' }}>
-            <h3 style={{ marginBottom: '10px' }}>전화번호 뒷자리 4자리를 입력해주세요</h3>
+          <div className="modal-content">
+            <h3>전화번호 뒷자리 4자리를 입력해주세요</h3>
             <form onSubmit={handlePhoneSubmit}>
               <input
                 type="text"
@@ -85,15 +102,9 @@ const ReservationPage = () => {
                 placeholder="예: 1234"
                 className="reservation-input"
               />
-              <div className="modal-buttons" style={{ marginTop: '10px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
+              <div className="modal-buttons">
                 <button type="submit" className="reservation-button">확인</button>
-                <button
-                  type="button"
-                  className="reservation-button cancel-btn"
-                  onClick={() => navigate('/')}
-                >
-                  돌아가기
-                </button>
+                <button type="button" className="reservation-button cancel-btn" onClick={() => navigate('/')}>돌아가기</button>
               </div>
             </form>
             {error && <p className="error-message">{error}</p>}
@@ -109,7 +120,6 @@ const ReservationPage = () => {
               key={order.order_id}
               className="book-card"
               onClick={() => setSelectedOrder(order)}
-              style={{ cursor: 'pointer' }}
             >
               <div className="book-title">주문번호: {order.order_id}</div>
               <p className="book-author">대표 상품: {order.representative_product}</p>
@@ -154,14 +164,19 @@ const ReservationPage = () => {
               수령 여부: {selectedOrder.receipt_status}
             </p>
 
-            {selectedOrder.receipt_status !== '수령' && (
+            {selectedOrder.receipt_status !== '수령' && !isAdmin && (
               <button className="complete-receipt-btn" onClick={() => handleComplete(selectedOrder.order_id)}>
                 수령 완료
               </button>
             )}
+            {isAdmin && selectedOrder.phone && (
+              <p>전화번호 뒷자리: {selectedOrder.phone.slice(-4)}</p>
+            )}
+
+
 
             <div className="qr-box">
-              <QRCodeCanvas value={`order:${selectedOrder.order_id}`} size={120} />
+              <QRCodeCanvas value={`http://localhost:3000/order-details/${selectedOrder.order_id}`} size={120} />
             </div>
             <button onClick={() => setSelectedOrder(null)}>닫기</button>
           </div>
