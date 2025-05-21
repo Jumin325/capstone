@@ -151,7 +151,6 @@
   margin: 4px 0;          /* ✅ 간격도 추가 */
 }
 
-
 .add-to-cart-btn {
   background-color: #0b65c6;
   color: white;
@@ -255,7 +254,6 @@
   color: orange;
 }
 
-
 .complete-receipt-btn {
   margin-top: 12px;
   background-color: #28a745;
@@ -280,4 +278,24 @@
 
 .cancel-btn:hover {
   background-color: #c94242 !important;
+}
+
+.empty-orders-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.2rem;
+  color: #555;
+  text-align: center;
+}
+
+.status-green {
+  color: green;
+}
+.status-orange {
+  color: orange;
+}
+.status-gray {
+  color: gray;
 }

@@ -105,8 +105,12 @@ const InquiryPage = () => {
   };
 
   const faqList = [
-    { question: '배송은 얼마나 걸리나요?', answer: '일반적으로 배송은 2~3일 소요됩니다.' },
-    { question: '주문 취소는 어떻게 하나요?', answer: '장바구니 상태에서는 주문을 취소할 수 있습니다.' },
+    { question: '상품은 언제 준비되나요?', answer: '결제 당일~다음날 오후 안에 준비하고 있습니다.' },
+    { question: '결제 후 몇일 이내 수령해야 하나요?', answer: '결제 후 5일 이내로 연락이 없다면 결제가 취소됩니다. 환불은 매장에 방문하거나 전화 바랍니다.' },
+    { question: '주문 취소는 어떻게 하나요?', answer: '장바구니 결제 전에는 취소가 가능하고, 이미 결제한 경우 매장에 전화 바랍니다.' },
+    { question: '재고는 언제 들어오나요?', answer: '보통 매주 월요일, 수요일날 들어옵니다.' },
+    { question: '교재가 안보여요', answer: '재고가 전부 소진된 경우 보이지 않게 설정되어 있습니다.' },
+    { question: '문의 답변은 언제 해주시나요?', answer: '매주 수요일과 금요일, 주 2회 정기적으로 처리하고 있습니다' },
   ];
 
   return (
@@ -124,7 +128,8 @@ const InquiryPage = () => {
               </div>
             ))}
           </div>
-
+          
+          {!isAdmin && (
           <div className="write-section">
             <button className="write-button" onClick={() => setShowForm(!showForm)}>글쓰기</button>
             {showForm && (
@@ -147,13 +152,13 @@ const InquiryPage = () => {
               </form>
             )}
 
-            {!isAdmin && (
+            
               <button className="check-my-questions-button" onClick={handleCheckMyQuestions}>
                 내 문의 확인하기
               </button>
+              </div>
             )}
-          </div>
-
+          
           {isAdmin && (
             <div className="question-list">
               <h3>전체 문의 내역 (관리자)</h3>

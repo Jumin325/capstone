@@ -84,6 +84,34 @@ const ReservationPage = () => {
     }
   };
 
+  //주문 목록 카드랑 receipt_status 상태 동기화
+  const handleSelectOrder = async (orderId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/reservation/${orderId}`);
+      const data = await response.json();
+      if (data.success) {
+        const latestOrder = data.order;
+
+        // ✅ 모달창용 상태 업데이트
+        setSelectedOrder(latestOrder);
+
+        // ✅ 카드에 표시되는 목록도 최신 상태로 갱신
+        setOrders(prev =>
+          prev.map(order =>
+            order.order_id === latestOrder.order_id
+              ? { ...order, receipt_status: latestOrder.receipt_status }
+              : order
+          )
+        );
+      } else {
+        alert('주문 상세 정보를 불러올 수 없습니다.');
+      }
+    } catch (err) {
+      console.error('주문 상세 조회 실패:', err);
+      alert('서버 오류');
+    }
+  };
+
   return (
     <div className="bookstore-container">
       <Header keyword={keyword} setKeyword={setKeyword} />
@@ -115,28 +143,37 @@ const ReservationPage = () => {
       {/* 주문 목록 카드 */}
       {!showModal && (
         <div className="book-list">
-          {orders.map((order) => (
-            <div
-              key={order.order_id}
-              className="book-card"
-              onClick={() => setSelectedOrder(order)}
-            >
-              <div className="book-title">주문번호: {order.order_id}</div>
-              <p className="book-author">대표 상품: {order.representative_product}</p>
-              <p className="book-publisher">
-                주문일자: {new Date(order.order_date).toLocaleString('ko-KR')}
-              </p>
-              <p className="book-price">총 수량 : {order.total_quantity}개</p>
-              <p className="book-price">총 금액 : {Math.round(order.total_amount).toLocaleString()}원</p>
-              <p className="book-price">
-                수령 여부:{" "}
-                <strong style={{ color: order.receipt_status === "수령" ? "green" : "orange" }}>
-                  {order.receipt_status === "수령" ? "수령" : "대기"}
+          {orders.length === 0 ? (
+            <p className="empty-orders-message">등록된 주문 내역이 없습니다.</p>
+          ) : (
+            orders.map((order) => (
+              <div
+                key={order.order_id}
+                className="book-card"
+                onClick={() => handleSelectOrder(order.order_id)}
+              >
+                <div className="book-title">주문번호: {order.order_id}</div>
+                <p className="book-author">대표 상품: {order.representative_product}</p>
+                <p className="book-publisher">
+                  주문일자: {new Date(order.order_date).toLocaleString('ko-KR')}
+                </p>
+                <p className="book-price">총 수량 : {order.total_quantity}개</p>
+                <p className="book-price">총 금액 : {Math.round(order.total_amount).toLocaleString()}원</p>
+                <p className="book-price">
+                  수령 여부:{' '}
+                <strong style={{
+                  color:
+                    order.receipt_status?.trim() === '수령' ? 'green' :
+                    order.receipt_status?.trim() === '취소' ? 'red' :
+                    'orange'
+                }}>
+                  {order.receipt_status?.trim() || '대기'}
                 </strong>
-              </p>
-              <button className="add-to-cart-btn">상세보기</button>
-            </div>
-          ))}
+                </p>
+                <button className="add-to-cart-btn">상세보기</button>
+              </div>
+            ))
+          )}
         </div>
       )}
 
@@ -160,11 +197,19 @@ const ReservationPage = () => {
               총 금액: <span>{Math.round(selectedOrder.total_amount).toLocaleString()}원</span>
             </p>
 
-            <p className={`receipt-status ${selectedOrder.receipt_status === '수령' ? 'done' : 'waiting'}`}>
-              수령 여부: {selectedOrder.receipt_status}
+            <p className={`receipt-status`}>
+              수령 여부:{' '}
+              <strong style={{
+                color:
+                  selectedOrder.receipt_status?.trim() === '수령' ? 'green' :
+                  selectedOrder.receipt_status?.trim() === '취소' ? 'red' :
+                  'orange'
+              }}>
+                {selectedOrder.receipt_status?.trim() || '대기'}
+              </strong>
             </p>
 
-            {selectedOrder.receipt_status !== '수령' && !isAdmin && (
+            {isAdmin && selectedOrder.receipt_status?.trim() !== '수령' && (
               <button className="complete-receipt-btn" onClick={() => handleComplete(selectedOrder.order_id)}>
                 수령 완료
               </button>

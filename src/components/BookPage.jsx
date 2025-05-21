@@ -23,6 +23,7 @@ const BookPage = () => {
   const [newStock, setNewStock] = useState('');
   
   
+  // 기본 목록 + 카테고리 로딩
   useEffect(() => {
     if (!isSearching) {
       fetchBooks();
@@ -30,6 +31,14 @@ const BookPage = () => {
     fetchCategories();
   }, [currentPage, sortOrder, activeCategory, activeProductType, isSearching]);
 
+  // 검색 중일 때 페이지 변경 감지용
+  useEffect(() => {
+    if (isSearching) {
+      handleSearch();
+    }
+  }, [currentPage]);
+
+  // 검색어 초기화 감지
   useEffect(() => {
     if (keyword.trim() === '') {
       setSearchResults([]);
@@ -82,9 +91,13 @@ const handleSearch = async () => {
           product_type: activeProductType,
           category_id: activeCategory,
           admin: isAdmin,
+          page: currentPage,
+          limit: 9
         },
       });
       setSearchResults(response.data.data);
+      const totalCount = response.data.pagination?.total || 0;
+      setTotalPages(Math.max(1, Math.ceil(totalCount / 9))); // ✅ 페이지 수 계산
     } catch (error) {
       console.error('검색 실패:', error);
       setSearchResults([]);
@@ -305,26 +318,23 @@ const handleSearch = async () => {
           )}
 
 {/* 페이지네이션 */}
-{!isSearching && (
-  <div className="pagination">
-    <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
-      &lt;
+<div className="pagination">
+  <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
+    &lt;
+  </button>
+  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+    <button
+      key={page}
+      className={`page-button ${currentPage === page ? 'active' : ''}`}
+      onClick={() => handlePageChange(page)}
+    >
+      {page}
     </button>
-    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-      <button
-        key={page}
-        className={`page-button ${currentPage === page ? 'active' : ''}`}
-        onClick={() => handlePageChange(page)}
-      >
-        {page}
-      </button>
-    ))}
-    <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>
-      &gt;
-    </button>
-  </div>
-)}
-
+  ))}
+  <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>
+    &gt;
+  </button>
+</div>
         </div>
       </div>
       {/* 재고 수량 수정 모달창 */}
