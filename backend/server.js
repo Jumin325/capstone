@@ -297,6 +297,16 @@ app.post('/api/complete-order', async (req, res) => {
         WHERE product_id = ?`,
         [item.quantity, item.product_id]
       );
+
+      // ✅ stock_quantity 확인 후 is_active 업데이트
+      await db.query(`
+        UPDATE product
+        SET is_active = CASE 
+                          WHEN stock_quantity = 0 THEN 'false'
+                          ELSE 'true'
+                        END
+        WHERE product_id = ?
+      `, [item.product_id]);
     }
 
     const [sumResult] = await db.query(`
@@ -937,11 +947,24 @@ app.put('/api/products/:productId', async (req, res) => {
   const { stock_quantity } = req.body;
 
   try {
-    const db = await initDB(); // ✅ 누락된 DB 연결
+    const db = await initDB();
+
+    // 재고 수정
     await db.query(
       'UPDATE product SET stock_quantity = ? WHERE product_id = ?',
       [stock_quantity, productId]
     );
+
+    // stock_quantity 확인 후 is_active 업데이트
+    await db.query(`
+      UPDATE product
+      SET is_active = CASE 
+                        WHEN stock_quantity = 0 THEN 'false'
+                        ELSE 'true'
+                      END
+      WHERE product_id = ?
+    `, [productId]);
+
     res.send({ success: true });
     await db.end(); // ✅ 연결 종료도 잊지 마세요
   } catch (err) {
@@ -1054,7 +1077,6 @@ app.put('/api/questions/:id/answer', async (req, res) => {
     res.status(500).json({ message: '답변 저장 실패' });
   }
 });
-
 
 // 서버 실행
 const PORT = process.env.PORT || 5000;
