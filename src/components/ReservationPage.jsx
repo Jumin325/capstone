@@ -45,13 +45,28 @@ const ReservationPage = () => {
     }
   };
 
-  const handlePhoneSubmit = (e) => {
+  // 주문 내역 조회시 전화번호 뒷 4자리 비교
+  const handlePhoneSubmit = async (e) => {
     e.preventDefault();
+
     if (phoneTail.trim().length !== 4) {
       setError('전화번호 뒷자리 4자리를 입력해주세요.');
       return;
     }
-    setShowModal(false);
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/reservation?tail=${phoneTail}`);
+      const data = await response.json();
+
+      if (data.success && data.orders.length > 0) {
+        setOrders(data.orders);
+        setShowModal(false);  // ✅ 주문이 있을 때만 모달 닫기
+      } else {
+        setError('일치하는 주문이 없습니다.');
+      }
+    } catch (err) {
+      setError('서버 요청 실패');
+    }
   };
 
   const handleComplete = async (orderId) => {
