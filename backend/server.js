@@ -8,6 +8,7 @@ const initDB = require('./db');  // mysql2/promise 연결
 const bcrypt = require('bcrypt');
 const schedule = require('node-schedule');
 const path = require('path');
+const BASE_URL = process.env.BASE_URL;
 
 const app = express();
 
@@ -750,12 +751,21 @@ app.get('/api/order-details/:orderId', async (req, res) => {
     `, [orderId]);
 
     if (orderMeta.length === 0) {
+      await connection.end();
       return res.status(404).json({ success: false });
     }
 
-    // QR코드 생성 (base64 또는 URL)
+    // ✅ QR코드 생성 전 URL 유효성 검사
     const qr = require('qrcode');
-    const qrDataUrl = await qr.toDataURL(`${BASE_URL}/order-details/${orderId}`);
+    const qrUrl = `${BASE_URL}/order-details/${orderId}`;
+
+    if (!orderId || typeof orderId !== 'string' || /[:*]/.test(orderId)) {
+      console.error(`🚨 잘못된 orderId 값:`, orderId);
+      await connection.end();
+      return res.status(400).json({ success: false, error: '잘못된 주문 ID' });
+    }
+
+    const qrDataUrl = await qr.toDataURL(qrUrl);
 
     const totalAmount = items.reduce((sum, i) => sum + i.price_per_item, 0);
 
@@ -767,6 +777,8 @@ app.get('/api/order-details/:orderId', async (req, res) => {
       items,
       qrUrl: qrDataUrl
     });
+
+    await connection.end();
   } catch (err) {
     console.error('상세 조회 실패:', err);
     res.status(500).json({ success: false });
