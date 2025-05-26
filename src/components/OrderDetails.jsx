@@ -13,7 +13,7 @@ const OrderDetails = () => {
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/order-details/${orderId}`, {
+        const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/order-details/${orderId}`, {
           credentials: 'include'
         });
         const result = await response.json();
@@ -65,7 +65,7 @@ const OrderDetails = () => {
             <h3 className="order-total">총 금액: {formatPrice(orderData.totalAmount)}</h3>
 
             <div className="qr-box">
-              <QRCodeCanvas value={`http://localhost:3000/order-details/${orderData.orderId}`} size={128} />
+              <QRCodeCanvas value={`${process.env.REACT_APP_API_BASE}/order-details/${orderData.orderId}`} size={128} />
             </div>
 
             <button className="close-btn" onClick={() => navigate('/book')}>닫기</button>

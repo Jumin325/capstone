@@ -50,7 +50,7 @@ const BookPage = () => {
     try {
       setLoading(true);
       const response = await fetch(
-        `http://localhost:5000/api/data?page=${currentPage}&sort=${sortOrder}&category=${activeCategory}&product_type=${activeProductType}&admin=${isAdmin.toString()}`
+        `${process.env.REACT_APP_API_BASE}/api/data?page=${currentPage}&sort=${sortOrder}&category=${activeCategory}&product_type=${activeProductType}&admin=${isAdmin.toString()}`
       );
       const result = await response.json();
       setBooks(result.data);
@@ -66,7 +66,7 @@ const BookPage = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/categories');
+      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/categories`);
       const data = await response.json();
       setCategories([{ id: 'all', name: '전체' }, ...data]);
     } catch (err) {
@@ -85,7 +85,7 @@ const handleSearch = async () => {
     setIsSearching(true);
 
     try {
-      const response = await axios.get('http://localhost:5000/api/search', {
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE}/api/search`, {
         params: {
           query: trimmedKeyword,
           product_type: activeProductType,
@@ -106,7 +106,7 @@ const handleSearch = async () => {
 
   const handleAddToCart = async (product_id) => {
     try {
-      const response = await fetch('http://localhost:5000/api/cart', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/cart`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -129,7 +129,7 @@ const handleSearch = async () => {
 
   const handleStockUpdate = async () => {
   try {
-    const response = await fetch(`http://localhost:5000/api/products/${editTarget.product_id}`, {
+    const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/products/${editTarget.product_id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stock_quantity: Number(newStock) })

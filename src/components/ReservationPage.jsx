@@ -33,7 +33,7 @@ const ReservationPage = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/reservation?tail=${phoneTail}`);
+      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/reservation?tail=${phoneTail}`);
       const data = await response.json();
       if (data.success) {
         setOrders(data.orders);
@@ -55,7 +55,7 @@ const ReservationPage = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/reservation?tail=${phoneTail}`);
+      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/reservation?tail=${phoneTail}`);
       const data = await response.json();
 
       if (data.success && data.orders.length > 0) {
@@ -71,7 +71,7 @@ const ReservationPage = () => {
 
   const handleComplete = async (orderId) => {
     try {
-      const response = await fetch('http://localhost:5000/api/receipt/complete', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/receipt/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId })
@@ -102,7 +102,7 @@ const ReservationPage = () => {
   //주문 목록 카드랑 receipt_status 상태 동기화
   const handleSelectOrder = async (orderId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/reservation/${orderId}`);
+      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/reservation/${orderId}`);
       const data = await response.json();
       if (data.success) {
         const latestOrder = data.order;
@@ -236,7 +236,7 @@ const ReservationPage = () => {
 
 
             <div className="qr-box">
-              <QRCodeCanvas value={`http://localhost:3000/order-details/${selectedOrder.order_id}`} size={120} />
+              <QRCodeCanvas value={`${process.env.REACT_APP_API_BASE}/order-details/${selectedOrder.order_id}`} size={120} />
             </div>
             <button onClick={() => setSelectedOrder(null)}>닫기</button>
           </div>

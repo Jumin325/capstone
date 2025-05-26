@@ -6,6 +6,7 @@ const session = require('express-session');
 const initDB = require('./db');  // mysql2/promise 연결
 const bcrypt = require('bcrypt');
 const schedule = require('node-schedule');
+const path = require('path');
 
 const app = express();
 
@@ -1076,6 +1077,16 @@ app.put('/api/questions/:id/answer', async (req, res) => {
     console.error('답변 저장 오류:', err);
     res.status(500).json({ message: '답변 저장 실패' });
   }
+});
+
+const fs = require('fs');
+
+// ✅ React 정적 파일 서빙
+app.use(express.static(path.join(__dirname, 'build')));
+
+// ✅ API보다 아래에 있어야 함! 모든 나머지 경로를 index.html로
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
 // 서버 실행
