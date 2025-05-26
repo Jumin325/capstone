@@ -25,7 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // 세션 설정
 app.use(session({
-  secret: 'easyfind-secret-key',
+  secret: process.env.SESSION_SECRET || 'default-secret',
   resave: false,
   saveUninitialized: false,
   cookie: {
