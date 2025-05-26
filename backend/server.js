@@ -754,7 +754,7 @@ app.get('/api/order-details/:orderId', async (req, res) => {
 
     // QR코드 생성 (base64 또는 URL)
     const qr = require('qrcode');
-    const qrDataUrl = await qr.toDataURL(`${process.env.REACT_APP_API_BASE}/order-details/${orderId}`);
+    const qrDataUrl = await qr.toDataURL(`${BASE_URL}/order-details/${orderId}`);
 
     const totalAmount = items.reduce((sum, i) => sum + i.price_per_item, 0);
 
