@@ -236,7 +236,7 @@ const ReservationPage = () => {
 
 
             <div className="qr-box">
-              <QRCodeCanvas value={`${process.env.REACT_APP_API_BASE}/order-details/${selectedOrder.order_id}`} size={120} />
+              <QRCodeCanvas value={`${process.env.REACT_APP_QR_URL}/order-details/${selectedOrder.order_id}`} size={120} />
             </div>
             <button onClick={() => setSelectedOrder(null)}>닫기</button>
           </div>

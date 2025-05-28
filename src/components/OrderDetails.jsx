@@ -65,7 +65,7 @@ const OrderDetails = () => {
             <h3 className="order-total">총 금액: {formatPrice(orderData.totalAmount)}</h3>
 
             <div className="qr-box">
-              <QRCodeCanvas value={`${process.env.REACT_APP_API_BASE}/order-details/${orderData.orderId}`} size={128} />
+              <QRCodeCanvas value={`${process.env.REACT_APP_QR_URL}/order-details/${orderData.orderId}`} size={128} />
             </div>
 
             <button className="close-btn" onClick={() => navigate('/book')}>닫기</button>

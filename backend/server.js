@@ -14,7 +14,7 @@ const app = express();
 
 // CORS 설정
 const corsOptions = {
-  origin:'http://capstone-easyfind-s3.s3-website.ap-northeast-2.amazonaws.com',
+  origin:'https://test-easyfind.p-e.kr',
   credentials: true,
 };
 
@@ -29,15 +29,27 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     maxAge: 1000 * 60 * 60,
-    secure: false,
+    secure: true,
     httpOnly: true,
-    sameSite: 'lax'
+    sameSite: 'none'
   }
 }));
 
 // 세션 확인
 app.get('/api/session', (req, res) => {
   res.send({ session: req.session ? 'active' : 'inactive' });
+});
+
+// 쿠키 생성 테스트
+app.get('/set-cookie-test', (req, res) => {
+  req.session.user = 'test';
+  req.session.save((err) => {
+    if (err) {
+      console.error('세션 저장 오류:', err);
+      return res.status(500).send('세션 저장 실패');
+    }
+    res.send('세션 생성 완료');
+  });
 });
 
 // 카테고리 조회
@@ -1090,16 +1102,6 @@ app.put('/api/questions/:id/answer', async (req, res) => {
     console.error('답변 저장 오류:', err);
     res.status(500).json({ message: '답변 저장 실패' });
   }
-});
-
-const fs = require('fs');
-
-// ✅ React 정적 파일 서빙
-app.use(express.static(path.join(__dirname, 'build')));
-
-// ✅ API보다 아래에 있어야 함! 모든 나머지 경로를 index.html로
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
 // 서버 실행
