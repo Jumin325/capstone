@@ -22,7 +22,6 @@ const BookPage = () => {
   const [editTarget, setEditTarget] = useState(null);
   const [newStock, setNewStock] = useState('');
   
-  
   // 기본 목록 + 카테고리 로딩
   useEffect(() => {
     if (!isSearching) {

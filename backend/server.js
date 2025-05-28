@@ -14,10 +14,7 @@ const app = express();
 
 // CORS 설정
 const corsOptions = {
-  origin: [
-    'http://localhost:3000', // 개발용
-    'http://capstone-easyfind-s3.s3-website.ap-northeast-2.amazonaws.com' // 운영용
-  ],
+  origin:'http://capstone-easyfind-s3.s3-website.ap-northeast-2.amazonaws.com',
   credentials: true,
 };
 
@@ -34,7 +31,7 @@ app.use(session({
     maxAge: 1000 * 60 * 60,
     secure: false,
     httpOnly: true,
-    sameSite: 'strict'
+    sameSite: 'lax'
   }
 }));
 
