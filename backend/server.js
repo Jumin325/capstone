@@ -1,17 +1,20 @@
 // server.js
 
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const initDB = require('./db');  // mysql2/promise 연결
 const bcrypt = require('bcrypt');
 const schedule = require('node-schedule');
+const path = require('path');
+const BASE_URL = process.env.BASE_URL;
 
 const app = express();
 
 // CORS 설정
 const corsOptions = {
-  origin: 'http://localhost:3000',
+  origin:'http://capstone-easyfind-s3.s3-website.ap-northeast-2.amazonaws.com',
   credentials: true,
 };
 
@@ -21,14 +24,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // 세션 설정
 app.use(session({
-  secret: 'easyfind-secret-key',
+  secret: process.env.SESSION_SECRET || 'default-secret',
   resave: false,
   saveUninitialized: false,
   cookie: {
     maxAge: 1000 * 60 * 60,
     secure: false,
     httpOnly: true,
-    sameSite: 'strict'
+    sameSite: 'lax'
   }
 }));
 

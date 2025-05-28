@@ -25,7 +25,7 @@ const InquiryPage = () => {
 
   const fetchInquiries = async (phoneTail) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/inquiries?phoneTail=${phoneTail}`);
+      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/inquiries?phoneTail=${phoneTail}`);
       const data = await response.json();
       setInquiries(data);
     } catch (error) {
@@ -39,7 +39,7 @@ const InquiryPage = () => {
       return alert('문의 내용과 비밀번호를 모두 입력해주세요.');
     }
     try {
-      await axios.post('http://localhost:5000/api/questions', {
+      await axios.post(`${process.env.REACT_APP_API_BASE}/api/questions`, {
         question: inquiry,
         password: password
       });
@@ -57,7 +57,7 @@ const InquiryPage = () => {
     const input = prompt('비밀번호를 입력하세요');
     if (!input) return;
     try {
-      const res = await axios.post('http://localhost:5000/api/questions/verify', {
+      const res = await axios.post(`${process.env.REACT_APP_API_BASE}/api/questions/verify`, {
         questionId,
         password: input
       });
@@ -71,7 +71,7 @@ const InquiryPage = () => {
     const input = prompt('문의 시 사용한 비밀번호를 입력하세요');
     if (!input) return;
     try {
-      const res = await axios.post('http://localhost:5000/api/my-questions', {
+      const res = await axios.post(`${process.env.REACT_APP_API_BASE}/api/my-questions`, {
         password: input
       });
       setMyQuestions(res.data.questions);
@@ -84,7 +84,7 @@ const InquiryPage = () => {
   const handleAnswerSubmit = async (questionId) => {
     const content = answerInputs[questionId];
     try {
-      await axios.put(`http://localhost:5000/api/questions/${questionId}/answer`, {
+      await axios.put(`${process.env.REACT_APP_API_BASE}/api/questions/${questionId}/answer`, {
         answer: content,
       });
 

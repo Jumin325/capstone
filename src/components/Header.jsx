@@ -17,7 +17,7 @@ const Header = ({ keyword, setKeyword, onSearch }) => {
   // 관리자 로그인 처리
   const handleAdminLogin = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin-session', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/admin-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'login' }),
@@ -46,7 +46,7 @@ const Header = ({ keyword, setKeyword, onSearch }) => {
     sessionStorage.removeItem('admin');
     setIsAdmin(false);
 
-    await fetch('http://localhost:5000/api/admin-session', {
+    await fetch(`${process.env.REACT_APP_API_BASE}/api/admin-session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'logout' }),
