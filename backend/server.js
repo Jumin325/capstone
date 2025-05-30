@@ -967,21 +967,26 @@ app.post('/api/admin-session', (req, res) => {
   }
 });
 
-// 관리자 BookPage 재고 및 가격 수정
 app.put('/api/products/:productId', async (req, res) => {
   const { productId } = req.params;
   const { stock_quantity, price } = req.body;
 
+  if (typeof stock_quantity !== 'number' || isNaN(stock_quantity)) {
+    return res.status(400).json({ error: '재고 수량이 올바르지 않습니다.' });
+  }
+
+  if (typeof price !== 'number' || isNaN(price)) {
+    return res.status(400).json({ error: '가격이 올바르지 않습니다.' });
+  }
+
   try {
     const db = await initDB();
 
-    // 재고 및 가격 수정
     await db.query(
       'UPDATE product SET stock_quantity = ?, price = ? WHERE product_id = ?',
       [stock_quantity, price, productId]
     );
 
-    // 재고 수량 기반으로 활성화 상태 갱신
     await db.query(`
       UPDATE product
       SET is_active = CASE 
@@ -992,10 +997,10 @@ app.put('/api/products/:productId', async (req, res) => {
     `, [productId]);
 
     res.send({ success: true });
-    await db.end(); // ✅ 연결 종료
+    await db.end();
   } catch (err) {
     console.error('재고 및 가격 수정 실패:', err);
-    res.status(500).send({ success: false });
+    res.status(500).json({ success: false });
   }
 });
 
