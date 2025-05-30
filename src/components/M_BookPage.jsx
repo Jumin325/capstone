@@ -17,13 +17,12 @@ const M_BookPage = () => {
   const isAdmin = sessionStorage.getItem('admin') === 'true';
   const [editTarget, setEditTarget] = useState(null);
   const [newStock, setNewStock] = useState('');
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [activeProductType, setActiveProductType] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState({ id: 'all', name: '전체', product_type: '책' });
 
   useEffect(() => {
     if (!isSearching) fetchBooks();
     fetchCategories();
-  }, [currentPage, sortOrder, isSearching, activeCategory, activeProductType]);
+  }, [currentPage, sortOrder, isSearching, selectedCategory]);
 
   useEffect(() => {
     if (isSearching) handleSearch();
@@ -39,8 +38,11 @@ const M_BookPage = () => {
   const fetchBooks = async () => {
     try {
       setLoading(true);
+      const categoryParam = selectedCategory.id !== 'all' ? selectedCategory.id : '';
+      const productTypeParam = selectedCategory.product_type;
+
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE}/api/data?page=${currentPage}&sort=${sortOrder}&category=${activeCategory}&product_type=${activeProductType}&admin=${isAdmin}`
+        `${process.env.REACT_APP_API_BASE}/api/data?page=${currentPage}&sort=${sortOrder}&category=${categoryParam}&product_type=${productTypeParam}&admin=${isAdmin}`
       );
       const result = await response.json();
       setBooks(result.data);
@@ -58,7 +60,14 @@ const M_BookPage = () => {
     try {
       const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/categories`);
       const data = await response.json();
-      setCategories([{ id: 'all', name: '전체' }, ...data]);
+
+      const bookCategories = data.map((cat) => ({ ...cat, product_type: '책' }));
+      const combined = [
+        { id: 'all', name: '전체', product_type: '책' },
+        ...bookCategories,
+        { id: 'all', name: '문구류', product_type: '문구류' }
+      ];
+      setCategories(combined);
     } catch (err) {
       console.error('카테고리 로딩 실패:', err);
     }
@@ -80,15 +89,12 @@ const M_BookPage = () => {
         admin: isAdmin,
         page: currentPage,
         limit: 9,
+        product_type: selectedCategory.product_type
       };
 
-      // 필터링 조건이 all이 아닐 때만 파라미터 추가
-      if (activeProductType !== 'all') params.product_type = activeProductType;
-      if (activeCategory !== 'all') params.category_id = activeCategory;
+      if (selectedCategory.id !== 'all') params.category_id = selectedCategory.id;
 
-      const response = await axios.get(`${process.env.REACT_APP_API_BASE}/api/search`, {
-        params,
-      });
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE}/api/search`, { params });
 
       setSearchResults(response.data.data);
       const totalCount = response.data.pagination?.total || 0;
@@ -131,9 +137,7 @@ const M_BookPage = () => {
       if (response.ok) {
         setBooks((prev) =>
           prev.map((b) =>
-            b.product_id === editTarget.product_id
-              ? { ...b, stock_quantity: Number(newStock) }
-              : b
+            b.product_id === editTarget.product_id ? { ...b, stock_quantity: Number(newStock) } : b
           )
         );
         alert('수정이 완료되었습니다.');
@@ -151,121 +155,98 @@ const M_BookPage = () => {
     <div className="m-book-container">
       <M_Header keyword={keyword} setKeyword={setKeyword} onSearch={handleSearch} />
 
-      <div className="m-content-container">
-        {/* 좌측 카테고리 사이드바 */}
-        <div className="m-sidebar">
-          <h3>도서</h3>
-          <ul className="m-category-list">
-            {categories.map((category) => (
-              <li
-                key={category.id}
-                className={activeCategory === category.id ? 'active' : ''}
-                onClick={() => {
-                  setActiveProductType('책');
-                  setActiveCategory(category.id);
-                  setCurrentPage(1);
-                  setIsSearching(false);
-                }}
-              >
-                {category.name}
-              </li>
-            ))}
-          </ul>
-
-          <h3>문구류</h3>
-          <ul className="m-category-list">
-            <li
-              className={activeProductType === '문구류' ? 'active' : ''}
-              onClick={() => {
-                setActiveProductType('문구류');
-                setActiveCategory('all');
-                setCurrentPage(1);
-                setIsSearching(false);
-              }}
+      <div className="m-sort-bar">
+        <select
+          value={`${selectedCategory.id}_${selectedCategory.product_type}`}
+          onChange={(e) => {
+            const [id, type] = e.target.value.split('_');
+            const found = categories.find((cat) => cat.id === id && cat.product_type === type);
+            if (found) {
+              setSelectedCategory(found);
+              setCurrentPage(1);
+              setIsSearching(false);
+            }
+          }}
+        >
+          {categories.map((category) => (
+            <option
+              key={`${category.id}_${category.product_type}`}
+              value={`${category.id}_${category.product_type}`}
             >
-              문구류
-            </li>
-          </ul>
-        </div>
+              {category.name}
+            </option>
+          ))}
+        </select>
 
-        {/* 우측 콘텐츠 영역 */}
-        <div className="m-main-content">
-          <div className="m-sort-bar">
-            <label>정렬:</label>
-            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-              <option value="낮은가격순">낮은가격순</option>
-              <option value="높은가격순">높은가격순</option>
-            </select>
-          </div>
+        <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+          <option value="낮은가격순">낮은가격순</option>
+          <option value="높은가격순">높은가격순</option>
+        </select>
+      </div>
 
-          <div className="m-book-grid">
-            {loading ? (
-              <div className="m-loading">로딩 중...</div>
-            ) : error ? (
-              <div className="m-error">{error}</div>
-            ) : (isSearching ? searchResults : books).length === 0 ? (
-              <div className="m-no-results">상품이 없습니다.</div>
-            ) : (
-              (isSearching ? searchResults : books).map((book) => (
-                <div key={book.product_id} className="m-book-item">
-                  <div className="m-book-image">
-                    {book.image_url ? (
-                      <img src={book.image_url} alt={book.product_name} />
-                    ) : (
-                      <div className="m-no-image">이미지 없음</div>
-                    )}
-                  </div>
-                  <div className="m-book-info">
-                    <h3>{book.product_name}</h3>
-                    {book.product_type === '책' && (
-                      <>
-                        <p className="m-book-author">저자: {book.author}</p>
-                        <p className="m-book-publisher">출판사: {book.publisher}</p>
-                      </>
-                    )}
-                    <p className="m-book-price">{Number(book.price).toLocaleString()}원</p>
-                    {isAdmin && <p>재고: {book.stock_quantity}</p>}
-                    <div className="m-book-actions">
-                      {isAdmin ? (
-                        <button
-                          onClick={() => {
-                            setEditTarget(book);
-                            setNewStock(book.stock_quantity.toString());
-                          }}
-                        >
-                          수정
-                        </button>
-                      ) : (
-                        <button onClick={() => handleAddToCart(book.product_id)}>장바구니</button>
-                      )}
-                    </div>
-                  </div>
+      <div className="m-book-grid">
+        {loading ? (
+          <div className="m-loading">로딩 중...</div>
+        ) : error ? (
+          <div className="m-error">{error}</div>
+        ) : (isSearching ? searchResults : books).length === 0 ? (
+          <div className="m-no-results">상품이 없습니다.</div>
+        ) : (
+          (isSearching ? searchResults : books).map((book) => (
+            <div key={book.product_id} className="m-book-item">
+              <div className="m-book-image">
+                {book.image_url ? (
+                  <img src={book.image_url} alt={book.product_name} />
+                ) : (
+                  <div className="m-no-image">이미지 없음</div>
+                )}
+              </div>
+              <div className="m-book-info">
+                <h3>{book.product_name}</h3>
+                {book.product_type === '책' && (
+                  <>
+                    <p className="m-book-author">저자: {book.author}</p>
+                    <p className="m-book-publisher">출판사: {book.publisher}</p>
+                  </>
+                )}
+                <p className="m-book-price">{Number(book.price).toLocaleString()}원</p>
+                {isAdmin && <p>재고: {book.stock_quantity}</p>}
+                <div className="m-book-actions">
+                  {isAdmin ? (
+                    <button
+                      onClick={() => {
+                        setEditTarget(book);
+                        setNewStock(book.stock_quantity.toString());
+                      }}
+                    >
+                      수정
+                    </button>
+                  ) : (
+                    <button onClick={() => handleAddToCart(book.product_id)}>장바구니</button>
+                  )}
                 </div>
-              ))
-            )}
-          </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
 
-          <div className="m-pagination">
-            <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
-              &lt;
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                className={currentPage === page ? 'active' : ''}
-                onClick={() => handlePageChange(page)}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              &gt;
-            </button>
-          </div>
-        </div>
+      <div className="m-pagination">
+        <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
+          &lt;
+        </button>
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <button
+            key={page}
+            className={currentPage === page ? 'active' : ''}
+            onClick={() => handlePageChange(page)}
+          >
+            {page}
+          </button>
+        ))}
+        <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>
+          &gt;
+        </button>
       </div>
 
       {editTarget && (

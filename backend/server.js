@@ -967,21 +967,21 @@ app.post('/api/admin-session', (req, res) => {
   }
 });
 
-//관리자 BookPage 재고 수정
+// 관리자 BookPage 재고 및 가격 수정
 app.put('/api/products/:productId', async (req, res) => {
   const { productId } = req.params;
-  const { stock_quantity } = req.body;
+  const { stock_quantity, price } = req.body;
 
   try {
     const db = await initDB();
 
-    // 재고 수정
+    // 재고 및 가격 수정
     await db.query(
-      'UPDATE product SET stock_quantity = ? WHERE product_id = ?',
-      [stock_quantity, productId]
+      'UPDATE product SET stock_quantity = ?, price = ? WHERE product_id = ?',
+      [stock_quantity, price, productId]
     );
 
-    // stock_quantity 확인 후 is_active 업데이트
+    // 재고 수량 기반으로 활성화 상태 갱신
     await db.query(`
       UPDATE product
       SET is_active = CASE 
@@ -992,9 +992,9 @@ app.put('/api/products/:productId', async (req, res) => {
     `, [productId]);
 
     res.send({ success: true });
-    await db.end(); // ✅ 연결 종료도 잊지 마세요
+    await db.end(); // ✅ 연결 종료
   } catch (err) {
-    console.error('재고 수정 실패:', err);
+    console.error('재고 및 가격 수정 실패:', err);
     res.status(500).send({ success: false });
   }
 });

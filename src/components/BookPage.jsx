@@ -21,6 +21,7 @@ const BookPage = () => {
   const isAdmin = sessionStorage.getItem('admin') === 'true';
   const [editTarget, setEditTarget] = useState(null);
   const [newStock, setNewStock] = useState('');
+  const [discountRate, setDiscountRate] = useState('');
   
   // 기본 목록 + 카테고리 로딩
   useEffect(() => {
@@ -127,31 +128,41 @@ const handleSearch = async () => {
   };
 
   const handleStockUpdate = async () => {
-  try {
-    const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/products/${editTarget.product_id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stock_quantity: Number(newStock) })
-    });
+    const rateNum = Number(discountRate);
+    const discountedPrice =
+      discountRate !== '' && !isNaN(rateNum)
+        ? Math.round(editTarget.original_price * (1 - rateNum / 100))
+        : editTarget.price;
 
-    if (response.ok) {
-      // 업데이트된 수량을 books 배열에도 반영
-      setBooks(prev =>
-        prev.map(b => b.product_id === editTarget.product_id
-          ? { ...b, stock_quantity: Number(newStock) }
-          : b
-        )
-      );
-      alert('수정이 완료되었습니다.');
-      setEditTarget(null);
-    } else {
-      alert('수정 실패');
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/products/${editTarget.product_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          stock_quantity: Number(newStock),
+          price: discountedPrice
+        })
+      });
+
+      if (response.ok) {
+        setBooks(prev =>
+          prev.map(b =>
+            b.product_id === editTarget.product_id
+              ? { ...b, stock_quantity: Number(newStock), price: discountedPrice }
+              : b
+          )
+        );
+        alert('수정이 완료되었습니다.');
+        setEditTarget(null);
+      } else {
+        alert('수정 실패');
+      }
+    } catch (err) {
+      console.error('수정 오류:', err);
+      alert('서버 오류');
     }
-  } catch (err) {
-    console.error('재고 수정 오류:', err);
-    alert('서버 오류');
-  }
-};
+  };
 
   return (
 <div className="bookstore-container">
@@ -264,52 +275,69 @@ const handleSearch = async () => {
 
     return (
       <>
-        {visibleItems.map(book => (
-          <div key={book.product_id} className="sub-book-item">
-            <div className="book-image">
-              {book.image_url ? (
-                <img src={book.image_url} alt={book.product_name} />
-              ) : (
-                <div className="placeholder">이미지 없음</div>
-              )}
-            </div>
-            <div className="book-info">
-              <h3 className="book-title">{book.product_name}</h3>
-              {book.product_type === '책' && (
+      {visibleItems.map(book => (
+        <div key={book.product_id} className="sub-book-item">
+          <div className="book-image">
+            {book.image_url ? (
+              <img src={book.image_url} alt={book.product_name} />
+            ) : (
+              <div className="placeholder">이미지 없음</div>
+            )}
+          </div>
+          <div className="book-info">
+            <h3 className="book-title">{book.product_name}</h3>
+            {book.product_type === '책' && (
+              <>
+                <p className="book-author">저자: {book.author}</p>
+                <p className="book-publisher">출판사: {book.publisher}</p>
+              </>
+            )}
+
+            {isAdmin && (
+              <p className="book-stock">
+                재고 수량: <span className="stock-number">{book.stock_quantity}개</span>
+              </p>
+            )}
+
+            <div className="book-price">
+              {book.original_price > book.price ? (
                 <>
-                  <p className="book-author">저자: {book.author}</p>
-                  <p className="book-publisher">출판사: {book.publisher}</p>
+                  <span className="original-price">
+                    {Number(book.original_price).toLocaleString()}원
+                  </span>
+                  <span className="sale-price">
+                    {Number(book.price).toLocaleString()}원
+                  </span>
                 </>
+              ) : (
+                <span className="sale-price">
+                  {Number(book.price).toLocaleString()}원
+                </span>
               )}
 
-              {isAdmin && (
-                  <p className="book-stock">
-                    재고 수량: <span className="stock-number">{book.stock_quantity}개</span>
-                   </p>
+              <div className="book-button-container">
+                {isAdmin ? (
+                  <button className="edit-button" onClick={() => {
+                    setEditTarget(book);
+                    setDiscountRate('');
+                    setNewStock(book.stock_quantity.toString());
+                  }}>
+                    수정
+                  </button>
+                ) : (
+                  <button className="add-to-cart-button" onClick={() => handleAddToCart(book.product_id)}>
+                    장바구니
+                  </button>
                 )}
-              <div className="book-price">
-                <span className="sale-price">{Number(book.price).toLocaleString()}원</span>
-                <div className="book-button-container">
-                  {isAdmin ? (
-                    <button className="edit-button" onClick={() => {
-                      setEditTarget(book);
-                      setNewStock(book.stock_quantity.toString());
-                    }}>
-                      수정
-                    </button>
-                  ) : (
-                    <button className="add-to-cart-button" onClick={() => handleAddToCart(book.product_id)}>
-                      장바구니
-                    </button>
-                  )}
-                </div>
               </div>
             </div>
           </div>
-        ))}
-        {placeholders.map((_, i) => (
-          <div key={`placeholder-${i}`} className="sub-book-item" style={{ visibility: 'hidden' }} />
-        ))}
+        </div>
+      ))}
+{placeholders.map((_, i) => (
+  <div key={`placeholder-${i}`} className="sub-book-item" style={{ visibility: 'hidden' }} />
+))}
+
       </>
     );
   })()}
@@ -340,16 +368,37 @@ const handleSearch = async () => {
       {editTarget && (
         <div className="modal-overlay" onClick={() => setEditTarget(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
-            <h3>📦 재고 수량 수정</h3>
+            <h3>📦 상품 수정</h3>
             <p><strong>{editTarget.product_name}</strong></p>
+
+            <label>재고 수량</label>
             <input
               type="number"
               value={newStock}
               onChange={(e) => setNewStock(e.target.value)}
               min="0"
-              style={{ padding: '8px', margin: '10px 0', width: '80%' }}
+              style={{ padding: '8px', marginBottom: '10px', width: '80%' }}
             />
-            <div style={{ marginTop: '10px' }}>
+
+            <label>할인율 (%)</label>
+            <input
+              type="number"
+              value={discountRate}
+              onChange={(e) => setDiscountRate(e.target.value)}
+              min="0"
+              max="100"
+              style={{ padding: '8px', marginBottom: '10px', width: '80%' }}
+            />
+
+            {discountRate !== '' && !isNaN(discountRate) && (
+              <p style={{ color: 'red', marginBottom: '10px' }}>
+                💸 할인된 가격: <strong>
+                  {(editTarget.original_price * (1 - discountRate / 100)).toLocaleString()}원
+                </strong>
+              </p>
+            )}
+
+            <div>
               <button onClick={handleStockUpdate} className="reservation-button">수정 완료</button>
               <button onClick={() => setEditTarget(null)} className="cancel-button" style={{ marginLeft: '10px' }}>취소</button>
             </div>

@@ -135,7 +135,7 @@
 .m-detail-btn {
   margin-top: 12px;
   width: 100%;
-  background-color: #007bff;
+  background-color: #28a745 !important;
   color: white;
   padding: 10px;
   border-radius: 6px;
@@ -174,7 +174,7 @@
 
 .close-btn {
   margin-top: 10px;
-  background-color: #ccc;
+  background-color: #28a745 !important;
   color: black;
   padding: 10px;
   border-radius: 6px;

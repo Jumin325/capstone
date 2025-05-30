@@ -25,7 +25,7 @@ const CartPage = () => {
   const fetchCartItems = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/cart', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/cart`, {
         credentials: 'include',
       });
 
@@ -53,7 +53,7 @@ const CartPage = () => {
     if (newQuantity < 1) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/cart/item/${orderItemId}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/cart/item/${orderItemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -70,7 +70,7 @@ const CartPage = () => {
 
   const handleRemoveItem = async (orderItemId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/cart/item/${orderItemId}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/cart/item/${orderItemId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -96,7 +96,7 @@ const CartPage = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/complete-order', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/complete-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -122,7 +122,7 @@ const CartPage = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/save-phone', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/save-phone`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

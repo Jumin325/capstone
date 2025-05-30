@@ -665,3 +665,35 @@
   font-weight: bold;
   cursor: pointer;
 }
+
+/* 장바구니 하단 버튼 영역 */
+.m-cart-button-area {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* 구매하기 버튼 (초록색) */
+.m-cart-checkout-btn {
+  background-color: #28a745; /* ✅ 초록 */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+/* 쇼핑 계속하기 버튼 (파란색) */
+.m-cart-continue-btn {
+  background-color: #007bff; /* ✅ 파랑 */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  text-align: center;
+  cursor: pointer;
+}
