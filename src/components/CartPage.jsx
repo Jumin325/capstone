@@ -25,7 +25,7 @@ const CartPage = () => {
   const fetchCartItems = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/cart`, {
+      const response = await fetch('http://localhost:5000/api/cart', {
         credentials: 'include',
       });
 
@@ -53,7 +53,7 @@ const CartPage = () => {
     if (newQuantity < 1) return;
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/cart/item/${orderItemId}`, {
+      const response = await fetch(`http://localhost:5000/api/cart/item/${orderItemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -70,7 +70,7 @@ const CartPage = () => {
 
   const handleRemoveItem = async (orderItemId) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/cart/item/${orderItemId}`, {
+      const response = await fetch(`http://localhost:5000/api/cart/item/${orderItemId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -96,7 +96,7 @@ const CartPage = () => {
     }
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/complete-order`, {
+      const response = await fetch('http://localhost:5000/api/complete-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -122,7 +122,7 @@ const CartPage = () => {
     }
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/save-phone`, {
+      const response = await fetch('http://localhost:5000/api/save-phone', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -158,7 +158,7 @@ const CartPage = () => {
         <Header keyword={keyword} setKeyword={setKeyword} />
 
       <div className="cart-container">
-        <h2 className="cart-title">장바구니</h2>
+        <h2 className="cart-title">🛒 장바구니</h2>
 
         {loading ? (
           <div className="loading">로딩 중...</div>

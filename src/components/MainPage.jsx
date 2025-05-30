@@ -84,7 +84,7 @@ const MainPage = () => {
       </section>
 
       <footer className="main-footer-text">
-        <p>© 2025 EasyFind. All rights reserved.<br />문의: easyfind@support.com</p>
+        <p>© 2025 Capstone EasyFind Project.<br />문의: easyfind@support.com</p>
       </footer>
     </div>
   );
