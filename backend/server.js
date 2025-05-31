@@ -14,13 +14,15 @@ const app = express();
 
 // CORS 설정
 const corsOptions = {
-  origin:'https://test-easyfind.p-e.kr',
+  origin:'https://easyfind.n-e.kr',
   credentials: true,
 };
 
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.set('trust proxy', 1);  // nginx 뒤에 있다는 걸 명시
 
 // 세션 설정
 app.use(session({
@@ -31,7 +33,8 @@ app.use(session({
     maxAge: 1000 * 60 * 60,
     secure: true,
     httpOnly: true,
-    sameSite: 'none'
+    sameSite: 'none',
+    domain: '.easyfind.n-e.kr'
   }
 }));
 
@@ -157,6 +160,7 @@ app.post('/api/cart', async (req, res) => {
 
   if (!req.session.initialized) {
     req.session.initialized = true;
+    req.session.createdAt = new Date(); // ✅ 실제 저장될 값
     console.log('새 세션 생성됨:', sessionId);
   }
 
@@ -242,7 +246,7 @@ app.get('/api/cart', async (req, res) => {
 
     const [items] = await db.query(
       `SELECT oi.order_item_id, oi.product_id, oi.quantity, oi.price_per_item,
-              p.product_name, p.image_url, p.product_type,
+              p.product_name, p.image_url, p.product_type, p.original_price,
               b.author, b.publisher
        FROM order_items oi
        JOIN product p ON oi.product_id = p.product_id

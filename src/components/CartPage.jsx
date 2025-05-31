@@ -7,15 +7,13 @@ const CartPage = () => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [totalAmount, setTotalAmount] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [phoneLastDigits, setPhoneLastDigits] = useState('');
   const [sessionId, setSessionId] = useState('');
   const [keyword, setKeyword] = useState('');
-  
-  const navigate = useNavigate();
 
+  const navigate = useNavigate();
   const goToBookPage = () => navigate('/book');
 
   useEffect(() => {
@@ -30,38 +28,26 @@ const CartPage = () => {
       });
 
       if (!response.ok) throw new Error('장바구니 정보를 가져오는데 실패했습니다.');
-
       const result = await response.json();
       setCartItems(result.items || []);
       setSessionId(result.session_id || '');
-      calculateTotal(result.items || []);
       setError(null);
     } catch (err) {
       setError('장바구니를 불러오는 중 오류가 발생했습니다: ' + err.message);
-      console.error('장바구니 API 오류:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateTotal = (items) => {
-    const total = items.reduce((sum, item) => sum + (item.price_per_item * item.quantity), 0);
-    setTotalAmount(total);
-  };
-
   const handleQuantityChange = async (orderItemId, newQuantity) => {
     if (newQuantity < 1) return;
-
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/cart/item/${orderItemId}`, {
+      await fetch(`${process.env.REACT_APP_API_BASE}/api/cart/item/${orderItemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ quantity: newQuantity }),
       });
-
-      if (!response.ok) throw new Error('수량 변경 실패');
-
       fetchCartItems();
     } catch (error) {
       alert('수량 변경 실패: ' + error.message);
@@ -70,13 +56,10 @@ const CartPage = () => {
 
   const handleRemoveItem = async (orderItemId) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/cart/item/${orderItemId}`, {
+      await fetch(`${process.env.REACT_APP_API_BASE}/api/cart/item/${orderItemId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
-
-      if (!response.ok) throw new Error('삭제 실패');
-
       fetchCartItems();
       alert('상품이 삭제되었습니다.');
     } catch (error) {
@@ -84,17 +67,16 @@ const CartPage = () => {
     }
   };
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
-  const openPhoneModal = () => setShowPhoneModal(true);
-  const closePhoneModal = () => setShowPhoneModal(false);
-
-  const confirmPayment = async () => {
-    if (!sessionId) {
-      alert('세션 정보가 없습니다.');
+  const handleCheckout = () => {
+    if (cartItems.length === 0) {
+      alert('장바구니에 상품이 없습니다.');
       return;
     }
+    setIsModalOpen(true);
+  };
 
+  const confirmPayment = async () => {
+    if (!sessionId) return alert('세션 정보가 없습니다.');
     try {
       const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/complete-order`, {
         method: 'POST',
@@ -103,13 +85,12 @@ const CartPage = () => {
         body: JSON.stringify({ sessionId }),
       });
       const result = await response.json();
-
-        if (result.success && result.orderId) {
-          setIsModalOpen(false);
-          openPhoneModal(); // 전화번호 입력 모달로 이동
-        } else {
-          alert(result.error || '결제 중 문제가 발생했습니다.');
-        }
+      if (result.success && result.orderId) {
+        setIsModalOpen(false);
+        setShowPhoneModal(true);
+      } else {
+        alert(result.error || '결제 중 문제가 발생했습니다.');
+      }
     } catch (error) {
       alert('결제 처리 중 오류가 발생했습니다: ' + error.message);
     }
@@ -120,20 +101,13 @@ const CartPage = () => {
       alert('전화번호 뒷자리 4자리를 정확히 입력하세요.');
       return;
     }
-
     try {
       const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/save-phone`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          sessionId,
-          phone_tail: phoneLastDigits
-        })
+        body: JSON.stringify({ sessionId, phone_tail: phoneLastDigits }),
       });
-
       const result = await response.json();
       if (result.success && result.orderId) {
         setShowPhoneModal(false);
@@ -146,16 +120,9 @@ const CartPage = () => {
     }
   };
 
-  const handleCheckout = () => {
-    if (cartItems.length === 0) {
-      alert('장바구니에 상품이 없습니다.');
-      return;
-    }
-    openModal();
-  };
   return (
     <div className="bookstore-container">
-        <Header keyword={keyword} setKeyword={setKeyword} />
+      <Header keyword={keyword} setKeyword={setKeyword} />
 
       <div className="cart-container">
         <h2 className="cart-title">🛒 장바구니</h2>
@@ -178,15 +145,14 @@ const CartPage = () => {
                 <div className="cart-header-item">가격</div>
                 <div className="cart-header-item">합계</div>
                 <div className="cart-header-item">삭제</div>
-              </div>              {cartItems.map((item) => (
+              </div>
+              {cartItems.map((item) => (
                 <div key={item.order_item_id} className="cart-item">
                   <div className="product-info">
                     <div className="product-image">
                       {item.image_url ? (
                         <img src={item.image_url} alt={item.product_name} />
-                      ) : (
-                        <div className="placeholder">상품 이미지</div>
-                      )}
+                      ) : <div className="placeholder">상품 이미지</div>}
                     </div>
                     <div className="product-details">
                       <h3>{item.product_name}</h3>
@@ -201,8 +167,23 @@ const CartPage = () => {
                     <button onClick={() => handleQuantityChange(item.order_item_id, item.quantity + 1)}>+</button>
                   </div>
 
-                  <div className="price">{Number(item.price_per_item).toLocaleString()}원</div>
-                  <div className="item-total">{Number(item.price_per_item * item.quantity).toLocaleString()}원</div>
+                  <div className="price">
+                    {item.original_price > item.price_per_item ? (
+                      <>
+                        <span className="original-price">{Number(item.original_price).toLocaleString()}원</span>
+                        <span className="sale-price">{Number(item.price_per_item).toLocaleString()}원</span>
+                        <span className="discount-rate">
+                          ({Math.round(((item.original_price - item.price_per_item) / item.original_price) * 100)}%)
+                        </span>
+                      </>
+                    ) : (
+                      <span className="sale-price">{Number(item.price_per_item).toLocaleString()}원</span>
+                    )}
+                  </div>
+
+                  <div className={`item-total ${item.original_price > item.price_per_item ? 'discounted' : ''}`}>
+                    {Number(item.price_per_item * item.quantity).toLocaleString()}원
+                  </div>
                   <div className="remove-item">
                     <button onClick={() => handleRemoveItem(item.order_item_id)}>삭제</button>
                   </div>
@@ -211,61 +192,75 @@ const CartPage = () => {
             </div>
 
             <div className="order-summary">
-              <div className="summary-line">
-                <span>총 상품금액</span>
-                <span>{Number(totalAmount).toLocaleString()}원</span>
-              </div>
-              <div className="summary-total">
-                <span>결제 예정금액</span>
-                <span>{Number(totalAmount).toLocaleString()}원</span>
-              </div>
-              <button className="checkout-button" onClick={handleCheckout} disabled={cartItems.length === 0}>
-                결제하기
-              </button>
-              <button className="continue-shopping" onClick={goToBookPage}>쇼핑 계속하기</button>
+              {(() => {
+                const originalTotal = cartItems.reduce(
+                  (sum, item) => sum + (item.original_price ?? item.price_per_item) * item.quantity,
+                  0
+                );
+                const discountedTotal = cartItems.reduce(
+                  (sum, item) => sum + item.price_per_item * item.quantity,
+                  0
+                );
+                const discountRate = originalTotal > 0
+                  ? Math.round(((originalTotal - discountedTotal) / originalTotal) * 100)
+                  : 0;
+
+                return (
+                  <>
+                    <div className="summary-line"><span>총 원가</span><span>{originalTotal.toLocaleString()}원</span></div>
+                    <div className="summary-line"><span>할인 적용 금액</span><span>{discountedTotal.toLocaleString()}원</span></div>
+                    {discountRate > 0 && (
+                      <div className="summary-line discount-rate">
+                        <span>총 할인률</span><span>{discountRate}% ↓</span>
+                      </div>
+                    )}
+                    <div className="summary-total"><span>결제 예정금액</span><span>{discountedTotal.toLocaleString()}원</span></div>
+                    <button className="checkout-button" onClick={handleCheckout}>결제하기</button>
+                    <button className="continue-shopping" onClick={goToBookPage}>쇼핑 계속하기</button>
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}
       </div>
 
-      {/* 결제 확인 모달 */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>결제 확인</h3>
-            <p>총 결제 금액: {Number(totalAmount).toLocaleString()}원</p>
+            <p>총 결제 금액: {
+              cartItems.reduce((sum, item) => sum + item.price_per_item * item.quantity, 0).toLocaleString()
+            }원</p>
             <div className="modal-buttons">
               <button onClick={confirmPayment}>확인</button>
-              <button onClick={closeModal}>취소</button>
+              <button onClick={() => setIsModalOpen(false)}>취소</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 전화번호 입력 모달 */}
       {showPhoneModal && (
-  <div className="modal-overlay">
-    <div className="modal-content" style={{ textAlign: 'center', padding: '20px' }}>
-      <h3 style={{ marginBottom: '10px' }}>전화번호 뒷자리 4자리를 입력해주세요</h3>
-      <input
-        type="text"
-        maxLength="4"
-        value={phoneLastDigits}
-        onChange={(e) => setPhoneLastDigits(e.target.value)}
-        placeholder="예: 1234"
-        style={{ width: '100px', textAlign: 'center', fontSize: '1.2em', marginBottom: '15px' }}
-      />
-      <div className="modal-buttons" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '10px' }}>
-        <button onClick={submitPhoneNumber}>확인</button>
-        <button onClick={closePhoneModal}>취소</button>
-      </div>
-    </div>
-  </div>
-)}
-
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ textAlign: 'center', padding: '20px' }}>
+            <h3 style={{ marginBottom: '10px' }}>전화번호 뒷자리 4자리를 입력해주세요</h3>
+            <input
+              type="text"
+              maxLength="4"
+              value={phoneLastDigits}
+              onChange={(e) => setPhoneLastDigits(e.target.value)}
+              placeholder="예: 1234"
+              style={{ width: '100px', textAlign: 'center', fontSize: '1.2em', marginBottom: '15px' }}
+            />
+            <div className="modal-buttons" style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+              <button onClick={submitPhoneNumber}>확인</button>
+              <button onClick={() => setShowPhoneModal(false)}>취소</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default CartPage;
-

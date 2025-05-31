@@ -308,6 +308,13 @@ const handleSearch = async () => {
                   <span className="sale-price">
                     {Number(book.price).toLocaleString()}원
                   </span>
+                  <span className="discount-rate">
+                    (
+                    {Math.round(
+                      ((book.original_price - book.price) / book.original_price) * 100
+                    )}
+                    %)
+                  </span>
                 </>
               ) : (
                 <span className="sale-price">
@@ -317,15 +324,21 @@ const handleSearch = async () => {
 
               <div className="book-button-container">
                 {isAdmin ? (
-                  <button className="edit-button" onClick={() => {
-                    setEditTarget(book);
-                    setDiscountRate('');
-                    setNewStock(book.stock_quantity.toString());
-                  }}>
+                  <button
+                    className="edit-button"
+                    onClick={() => {
+                      setEditTarget(book);
+                      setDiscountRate('');
+                      setNewStock(book.stock_quantity.toString());
+                    }}
+                  >
                     수정
                   </button>
                 ) : (
-                  <button className="add-to-cart-button" onClick={() => handleAddToCart(book.product_id)}>
+                  <button
+                    className="add-to-cart-button"
+                    onClick={() => handleAddToCart(book.product_id)}
+                  >
                     장바구니
                   </button>
                 )}
