@@ -7,12 +7,11 @@ const M_CartPage = () => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [totalAmount, setTotalAmount] = useState(0);
+  const [sessionId, setSessionId] = useState('');
+  const [keyword, setKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [phoneLastDigits, setPhoneLastDigits] = useState('');
-  const [sessionId, setSessionId] = useState('');
-  const [keyword, setKeyword] = useState('');
 
   const navigate = useNavigate();
   const goToBookPage = () => navigate('/book');
@@ -27,12 +26,10 @@ const M_CartPage = () => {
       const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/cart`, {
         credentials: 'include',
       });
-
       if (!response.ok) throw new Error('장바구니 정보를 가져오는데 실패했습니다.');
       const result = await response.json();
       setCartItems(result.items || []);
       setSessionId(result.session_id || '');
-      calculateTotal(result.items || []);
       setError(null);
     } catch (err) {
       setError('장바구니를 불러오는 중 오류가 발생했습니다: ' + err.message);
@@ -41,14 +38,8 @@ const M_CartPage = () => {
     }
   };
 
-  const calculateTotal = (items) => {
-    const total = items.reduce((sum, item) => sum + (item.price_per_item * item.quantity), 0);
-    setTotalAmount(total);
-  };
-
   const handleQuantityChange = async (orderItemId, newQuantity) => {
     if (newQuantity < 1) return;
-
     try {
       await fetch(`${process.env.REACT_APP_API_BASE}/api/cart/item/${orderItemId}`, {
         method: 'PUT',
@@ -76,11 +67,7 @@ const M_CartPage = () => {
   };
 
   const confirmPayment = async () => {
-    if (!sessionId) {
-      alert('세션 정보가 없습니다.');
-      return;
-    }
-
+    if (!sessionId) return alert('세션 정보가 없습니다.');
     try {
       const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/complete-order`, {
         method: 'POST',
@@ -89,7 +76,6 @@ const M_CartPage = () => {
         body: JSON.stringify({ sessionId }),
       });
       const result = await response.json();
-
       if (result.success && result.orderId) {
         setIsModalOpen(false);
         setShowPhoneModal(true);
@@ -102,11 +88,7 @@ const M_CartPage = () => {
   };
 
   const submitPhoneNumber = async () => {
-    if (!/^\d{4}$/.test(phoneLastDigits)) {
-      alert('전화번호 뒷자리 4자리를 정확히 입력하세요.');
-      return;
-    }
-
+    if (!/^\d{4}$/.test(phoneLastDigits)) return alert('전화번호 뒷자리 4자리를 정확히 입력하세요.');
     try {
       const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/save-phone`, {
         method: 'POST',
@@ -114,7 +96,6 @@ const M_CartPage = () => {
         credentials: 'include',
         body: JSON.stringify({ sessionId, phone_tail: phoneLastDigits }),
       });
-
       const result = await response.json();
       if (result.success && result.orderId) {
         setShowPhoneModal(false);
@@ -127,12 +108,25 @@ const M_CartPage = () => {
     }
   };
 
+  // 총 계산
+  const originalTotal = cartItems.reduce(
+    (sum, item) => sum + (item.original_price ?? item.price_per_item) * item.quantity,
+    0
+  );
+  const discountedTotal = cartItems.reduce(
+    (sum, item) => sum + item.price_per_item * item.quantity,
+    0
+  );
+  const discountRate =
+    originalTotal > 0
+      ? Math.round(((originalTotal - discountedTotal) / originalTotal) * 100)
+      : 0;
+
   return (
     <div className="m-book-container">
       <M_Header keyword={keyword} setKeyword={setKeyword} />
-
       <h2 className="m-cart-title">🛒 장바구니</h2>
-      <hr></hr>
+      <hr />
 
       {loading ? (
         <div className="m-loading">로딩 중...</div>
@@ -154,7 +148,7 @@ const M_CartPage = () => {
             <div>삭제</div>
           </div>
 
-          {/* 테이블 항목 */}
+          {/* 아이템 목록 */}
           {cartItems.map((item) => (
             <div key={item.order_item_id} className="m-cart-table-row">
               <div className="m-cart-product-info">
@@ -170,25 +164,49 @@ const M_CartPage = () => {
                 <span>{item.quantity}</span>
                 <button onClick={() => handleQuantityChange(item.order_item_id, item.quantity + 1)}>+</button>
               </div>
-              <div className="m-cart-price">{item.price_per_item.toLocaleString()}원</div>
-              <div className="m-cart-total">{(item.price_per_item * item.quantity).toLocaleString()}원</div>
+              <div className="m-cart-price">
+                {item.original_price > item.price_per_item ? (
+                  <>
+                    <span className="original-price">{item.original_price.toLocaleString()}원</span>
+                    <span className="sale-price">{item.price_per_item.toLocaleString()}원</span>
+                    <span className="discount-rate">({Math.round(((item.original_price - item.price_per_item) / item.original_price) * 100)}%)</span>
+                  </>
+                ) : (
+                  <span className="sale-price">{item.price_per_item.toLocaleString()}원</span>
+                )}
+              </div>
+              <div className={`m-cart-total ${item.original_price > item.price_per_item ? 'discounted' : ''}`}>
+                {(item.price_per_item * item.quantity).toLocaleString()}원
+              </div>
               <div className="m-cart-delete">
                 <button onClick={() => handleRemoveItem(item.order_item_id)}>삭제</button>
               </div>
             </div>
           ))}
 
+          {/* 요약 박스 */}
           <div className="m-cart-price-box">
             <div className="m-price-row">
-              <span>상품가격</span>
-              <span>{totalAmount.toLocaleString()}원</span>
+              <span>총 원가</span>
+              <span>{originalTotal.toLocaleString()}원</span>
             </div>
+            <div className="m-price-row">
+              <span>할인 적용 금액</span>
+              <span>{discountedTotal.toLocaleString()}원</span>
+            </div>
+            {discountRate > 0 && (
+              <div className="m-price-row" style={{ color: 'green', fontWeight: 'bold' }}>
+                <span>총 할인률</span>
+                <span>{discountRate}% ↓</span>
+              </div>
+            )}
             <div className="m-price-row total">
-              <span>합계</span>
-              <span>{totalAmount.toLocaleString()}원</span>
+              <span>결제 예정금액</span>
+              <span>{discountedTotal.toLocaleString()}원</span>
             </div>
           </div>
 
+          {/* 하단 버튼 */}
           <div className="m-cart-button-area">
             <button className="m-cart-checkout-btn" onClick={confirmPayment}>구매하기</button>
             <button className="m-cart-continue-btn" onClick={goToBookPage}>쇼핑 계속하기</button>
@@ -201,7 +219,7 @@ const M_CartPage = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>결제 확인</h3>
-            <p>총 결제 금액: {totalAmount.toLocaleString()}원</p>
+            <p>총 결제 금액: {discountedTotal.toLocaleString()}원</p>
             <div className="modal-buttons">
               <button onClick={confirmPayment}>확인</button>
               <button onClick={() => setIsModalOpen(false)}>취소</button>
@@ -210,7 +228,7 @@ const M_CartPage = () => {
         </div>
       )}
 
-      {/* 전화번호 입력 모달 */}
+      {/* 전화번호 입력 */}
       {showPhoneModal && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ textAlign: 'center', padding: '20px' }}>

@@ -17,6 +17,7 @@ const M_BookPage = () => {
   const isAdmin = sessionStorage.getItem('admin') === 'true';
   const [editTarget, setEditTarget] = useState(null);
   const [newStock, setNewStock] = useState('');
+  const [newDiscountRate, setNewDiscountRate] = useState('');
   const [selectedCategory, setSelectedCategory] = useState({ id: 'all', name: '전체', product_type: '책' });
 
   useEffect(() => {
@@ -128,16 +129,26 @@ const M_BookPage = () => {
 
   const handleStockUpdate = async () => {
     try {
+      const updateData = { stock_quantity: Number(newStock) };
+      if (newDiscountRate !== '') updateData.discount_rate = Number(newDiscountRate);
+
       const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/products/${editTarget.product_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stock_quantity: Number(newStock) }),
+        body: JSON.stringify(updateData),
       });
 
       if (response.ok) {
         setBooks((prev) =>
           prev.map((b) =>
-            b.product_id === editTarget.product_id ? { ...b, stock_quantity: Number(newStock) } : b
+            b.product_id === editTarget.product_id
+              ? {
+                  ...b,
+                  stock_quantity: Number(newStock),
+                  discount_rate: newDiscountRate !== '' ? Number(newDiscountRate) : b.discount_rate,
+                  price: newDiscountRate !== '' ? Math.round(b.original_price * (1 - Number(newDiscountRate) / 100)) : b.price
+                }
+              : b
           )
         );
         alert('수정이 완료되었습니다.');
@@ -209,14 +220,28 @@ const M_BookPage = () => {
                     <p className="m-book-publisher">출판사: {book.publisher}</p>
                   </>
                 )}
-                <p className="m-book-price">{Number(book.price).toLocaleString()}원</p>
-                {isAdmin && <p>재고: {book.stock_quantity}</p>}
+                <div className="m-book-price">
+                  {book.original_price > book.price ? (
+                    <>
+                      <span className="original-price">{Number(book.original_price).toLocaleString()}원</span>
+                      <span className="sale-price">{Number(book.price).toLocaleString()}원</span>
+                      <span className="discount-rate">
+                        ({Math.round(((book.original_price - book.price) / book.original_price) * 100)}%)
+                      </span>
+                    </>
+                  ) : (
+                    <span className="sale-price">{Number(book.price).toLocaleString()}원</span>
+                  )}
+                </div>
+
+                {isAdmin && <p className="m-book-stock">재고: {book.stock_quantity}</p>}
                 <div className="m-book-actions">
                   {isAdmin ? (
                     <button
                       onClick={() => {
                         setEditTarget(book);
                         setNewStock(book.stock_quantity.toString());
+                        setNewDiscountRate(book.discount_rate?.toString() || '');
                       }}
                     >
                       수정
@@ -259,6 +284,15 @@ const M_BookPage = () => {
               value={newStock}
               onChange={(e) => setNewStock(e.target.value)}
               min="0"
+              placeholder="재고 수량"
+            />
+            <input
+              type="number"
+              value={newDiscountRate}
+              onChange={(e) => setNewDiscountRate(e.target.value)}
+              min="0"
+              max="99"
+              placeholder="할인률 (%)"
             />
             <div className="m-modal-buttons">
               <button onClick={handleStockUpdate}>수정 완료</button>

@@ -444,3 +444,23 @@
   border: 1px solid #ccc;
   border-radius: 6px;
 }
+
+.original-price {
+  text-decoration: line-through;
+  color: #888;
+  font-size: 0.9rem;
+  margin-right: 6px;
+}
+
+.discount-rate {
+  color: green;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-left: 4px;
+}
+
+.sale-price {
+  font-size: 14px;
+  color: #d9230f;
+  font-weight: bold;
+}
