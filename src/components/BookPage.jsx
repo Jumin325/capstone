@@ -128,11 +128,16 @@ const handleSearch = async () => {
   };
 
   const handleStockUpdate = async () => {
-    const rateNum = Number(discountRate);
-    const discountedPrice =
-      discountRate !== '' && !isNaN(rateNum)
-        ? Math.round(editTarget.original_price * (1 - rateNum / 100))
-        : editTarget.price;
+    const stockNum = Number(newStock);
+    const rateNum = discountRate === '' || isNaN(Number(discountRate)) ? 0 : Number(discountRate);
+
+    // 유효성 검사
+    if (isNaN(stockNum)) {
+      alert('재고 수량이 숫자가 아닙니다.');
+      return;
+    }
+
+    const discountedPrice = Math.round(editTarget.original_price * (1 - rateNum / 100));
 
     try {
       const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/products/${editTarget.product_id}`, {
@@ -140,7 +145,7 @@ const handleSearch = async () => {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          stock_quantity: Number(newStock),
+          stock_quantity: stockNum,
           price: discountedPrice
         })
       });
@@ -149,14 +154,20 @@ const handleSearch = async () => {
         setBooks(prev =>
           prev.map(b =>
             b.product_id === editTarget.product_id
-              ? { ...b, stock_quantity: Number(newStock), price: discountedPrice }
+              ? {
+                  ...b,
+                  stock_quantity: stockNum,
+                  price: discountedPrice,
+                  discount_rate: rateNum // 필요 시 discount_rate도 갱신
+                }
               : b
           )
         );
         alert('수정이 완료되었습니다.');
         setEditTarget(null);
       } else {
-        alert('수정 실패');
+        const errorMsg = await response.json();
+        alert(`수정 실패: ${errorMsg.error || '알 수 없는 오류'}`);
       }
     } catch (err) {
       console.error('수정 오류:', err);

@@ -141,46 +141,54 @@ const M_CartPage = () => {
         <>
           {/* 테이블 헤더 */}
           <div className="m-cart-table-header">
-            <div>상품정보</div>
-            <div>수량</div>
-            <div>가격</div>
-            <div>합계</div>
-            <div>삭제</div>
+            <div className="m-cart-left-header">상품정보</div>
+            <div className="m-cart-header-cell">수량</div>
+            <div className="m-cart-header-cell">가격</div>
+            <div className="m-cart-header-cell">합계</div>
+            <div className="m-cart-header-cell">삭제</div>
           </div>
 
-          {/* 아이템 목록 */}
           {cartItems.map((item) => (
             <div key={item.order_item_id} className="m-cart-table-row">
-              <div className="m-cart-product-info">
-                <img src={item.image_url} alt={item.product_name} />
-                <div className="m-cart-product-text">
-                  <h4>{item.product_name}</h4>
-                  {item.author && <p>저자: {item.author}</p>}
-                  {item.publisher && <p>출판사: {item.publisher}</p>}
+
+              {/* 왼쪽: 상품 이미지 + 제목만 (비율 2) */}
+              <div className="m-cart-left">
+                <img src={item.image_url} alt={item.product_name} className="m-cart-product-image" />
+                <div className="m-cart-title-only">{item.product_name}</div>
+              </div>
+
+              {/* 오른쪽: 수량, 가격, 합계, 삭제 가로 정렬 (비율 8) */}
+              <div className="m-cart-right-row">
+                <div className="m-cart-quantity">
+                  <button onClick={() => handleQuantityChange(item.order_item_id, item.quantity - 1)} disabled={item.quantity <= 1}>-</button>
+                  <span>{item.quantity}</span>
+                  <button onClick={() => handleQuantityChange(item.order_item_id, item.quantity + 1)}>+</button>
+                </div>
+
+                <div className="m-cart-price">
+                  {item.original_price > item.price_per_item ? (
+                    <>
+                      <div className="m-cart-original-price">
+                        {Math.round(item.original_price).toLocaleString()}원
+                      </div>
+                      <div className="m-cart-sale-price">
+                        {Math.round(item.price_per_item).toLocaleString()}원
+                      </div>
+                    </>
+                  ) : (
+                    <span>{Math.round(item.price_per_item).toLocaleString()}원</span>
+                  )}
+                </div>
+
+                <div className="m-cart-total">
+                  {Math.round(item.price_per_item * item.quantity).toLocaleString()}원
+                </div>
+
+                <div className="m-cart-delete">
+                  <button onClick={() => handleRemoveItem(item.order_item_id)}>삭제</button>
                 </div>
               </div>
-              <div className="m-cart-quantity">
-                <button onClick={() => handleQuantityChange(item.order_item_id, item.quantity - 1)} disabled={item.quantity <= 1}>-</button>
-                <span>{item.quantity}</span>
-                <button onClick={() => handleQuantityChange(item.order_item_id, item.quantity + 1)}>+</button>
-              </div>
-              <div className="m-cart-price">
-                {item.original_price > item.price_per_item ? (
-                  <>
-                    <span className="original-price">{item.original_price.toLocaleString()}원</span>
-                    <span className="sale-price">{item.price_per_item.toLocaleString()}원</span>
-                    <span className="discount-rate">({Math.round(((item.original_price - item.price_per_item) / item.original_price) * 100)}%)</span>
-                  </>
-                ) : (
-                  <span className="sale-price">{item.price_per_item.toLocaleString()}원</span>
-                )}
-              </div>
-              <div className={`m-cart-total ${item.original_price > item.price_per_item ? 'discounted' : ''}`}>
-                {(item.price_per_item * item.quantity).toLocaleString()}원
-              </div>
-              <div className="m-cart-delete">
-                <button onClick={() => handleRemoveItem(item.order_item_id)}>삭제</button>
-              </div>
+
             </div>
           ))}
 
@@ -208,7 +216,7 @@ const M_CartPage = () => {
 
           {/* 하단 버튼 */}
           <div className="m-cart-button-area">
-            <button className="m-cart-checkout-btn" onClick={confirmPayment}>구매하기</button>
+            <button className="m-cart-checkout-btn" onClick={confirmPayment}>결제하기</button>
             <button className="m-cart-continue-btn" onClick={goToBookPage}>쇼핑 계속하기</button>
           </div>
         </>

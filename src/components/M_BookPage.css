@@ -347,12 +347,12 @@
 }
 
 .m-cart-checkout-btn {
-  background: #000;
+  background: green;
   color: #fff;
 }
 
 .m-cart-continue-btn {
-  background: #eee;
+  background: #007bff;
   color: #333;
 }
 
@@ -463,4 +463,171 @@
   font-size: 14px;
   color: #d9230f;
   font-weight: bold;
+}
+
+/* 모바일 상품 정보 수직 배치용 */
+.m-cart-product-info-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.m-cart-product-image {
+  width: 100px;
+  height: auto;
+  border-radius: 8px;
+}
+
+.m-cart-product-text h4 {
+  font-size: 1rem;
+  margin-bottom: 4px;
+  font-weight: bold;
+}
+
+.m-cart-product-text p {
+  font-size: 0.9rem;
+  margin: 2px 0;
+  color: #444;
+}
+
+.m-cart-table-header {
+  display: flex;
+  align-items: center;
+  padding: 2vw 2vw;
+  font-weight: bold;
+  font-size: 3.5vw;
+  border-bottom: 2px solid #ccc;
+  text-align: center;
+  gap: 2vw;
+}
+
+/* 상품 정보 영역: 왼쪽 작은 칸 */
+.m-cart-left-header {
+  flex: 2;
+  text-align: center;
+}
+
+/* 나머지 4개 칸 동일한 비율 */
+.m-cart-header-cell {
+  flex: 2;
+}
+
+.m-cart-table-row {
+  display: flex;
+  align-items: center;
+  padding: 3vw 2vw;
+  border-bottom: 1px solid #ddd;
+  gap: 2vw;
+}
+
+/* ✅ 왼쪽: 이미지 + 제목 (20%) */
+.m-cart-left {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  gap: 1vw;
+}
+
+/* ✅ 이미지 크기: 뷰포트 비율로 */
+.m-cart-product-image {
+  width: 10vw;
+  height: auto;
+  object-fit: contain;
+}
+
+/* ✅ 상품 제목: 말줄임 + 최대 너비 */
+.m-cart-title-only {
+  font-size: 3.5vw;
+  font-weight: 600;
+  max-width: 14vw;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 오른쪽: 수량 / 가격 / 합계 / 삭제 (80%) */
+.m-cart-right-row {
+  flex: 8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2vw;
+  font-size: 3.5vw;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+/* 수량 조절 버튼 */
+.m-cart-quantity {
+  display: flex;
+  gap: 1.5vw;
+  align-items: center;
+}
+
+.m-cart-quantity button {
+  width: 6vw;
+  height: 6vw;
+  font-size: 3.2vw;
+  border-radius: 50%;
+  border: none;
+  background-color: #eee;
+  cursor: pointer;
+}
+
+.m-cart-quantity span {
+  font-size: 3.4vw;
+}
+
+/* 가격 영역 */
+.m-cart-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 18vw;
+  gap: 0.8vw;
+  font-size: 3.4vw;
+}
+
+/* 원가 */
+.m-cart-original-price {
+  text-decoration: line-through;
+  color: #999;
+  font-size: 3.2vw;
+}
+
+/* 할인가 (빨간색 강조) */
+.m-cart-sale-price {
+  color: #d32f2f;
+  font-weight: bold;
+  font-size: 3.6vw;
+}
+
+/* 합계 금액 */
+.m-cart-total {
+  font-size: 3.6vw;
+  font-weight: 600;
+  color: #333;
+  min-width: 18vw;
+  text-align: right;
+}
+
+/* 삭제 버튼 */
+.m-cart-delete button {
+  background-color: #d32f2f;
+  color: #fff;
+  padding: 1.5vw 3vw;
+  font-size: 3.2vw;
+  border: none;
+  border-radius: 5vw;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.m-cart-delete button:hover {
+  background-color: #b71c1c;
 }

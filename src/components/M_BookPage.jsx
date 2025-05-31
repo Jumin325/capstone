@@ -19,6 +19,7 @@ const M_BookPage = () => {
   const [newStock, setNewStock] = useState('');
   const [newDiscountRate, setNewDiscountRate] = useState('');
   const [selectedCategory, setSelectedCategory] = useState({ id: 'all', name: '전체', product_type: '책' });
+  const [discountRate, setDiscountRate] = useState('');
 
   useEffect(() => {
     if (!isSearching) fetchBooks();
@@ -128,25 +129,37 @@ const M_BookPage = () => {
   };
 
   const handleStockUpdate = async () => {
-    try {
-      const updateData = { stock_quantity: Number(newStock) };
-      if (newDiscountRate !== '') updateData.discount_rate = Number(newDiscountRate);
+    const stockNum = Number(newStock);
+    const rateNum = discountRate === '' || isNaN(Number(discountRate)) ? 0 : Number(discountRate);
 
+    // 유효성 검사
+    if (isNaN(stockNum)) {
+      alert('재고 수량이 숫자가 아닙니다.');
+      return;
+    }
+
+    const discountedPrice = Math.round(editTarget.original_price * (1 - rateNum / 100));
+
+    try {
       const response = await fetch(`${process.env.REACT_APP_API_BASE}/api/products/${editTarget.product_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData),
+        credentials: 'include',
+        body: JSON.stringify({
+          stock_quantity: stockNum,
+          price: discountedPrice
+        })
       });
 
       if (response.ok) {
-        setBooks((prev) =>
-          prev.map((b) =>
+        setBooks(prev =>
+          prev.map(b =>
             b.product_id === editTarget.product_id
               ? {
                   ...b,
-                  stock_quantity: Number(newStock),
-                  discount_rate: newDiscountRate !== '' ? Number(newDiscountRate) : b.discount_rate,
-                  price: newDiscountRate !== '' ? Math.round(b.original_price * (1 - Number(newDiscountRate) / 100)) : b.price
+                  stock_quantity: stockNum,
+                  price: discountedPrice,
+                  discount_rate: rateNum // 필요 시 discount_rate도 갱신
                 }
               : b
           )
@@ -154,10 +167,11 @@ const M_BookPage = () => {
         alert('수정이 완료되었습니다.');
         setEditTarget(null);
       } else {
-        alert('수정 실패');
+        const errorMsg = await response.json();
+        alert(`수정 실패: ${errorMsg.error || '알 수 없는 오류'}`);
       }
     } catch (err) {
-      console.error('재고 수정 오류:', err);
+      console.error('수정 오류:', err);
       alert('서버 오류');
     }
   };

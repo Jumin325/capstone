@@ -122,7 +122,7 @@ const M_InquiryPage = () => {
                 className="m-inquiry-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="비밀번호 (4자리)"
+                placeholder="비밀번호"
                 required
               />
               <button type="submit" className="m-inquiry-submit">제출</button>
